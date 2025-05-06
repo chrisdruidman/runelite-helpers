@@ -1,6 +1,7 @@
 package com.osrs.agent;
 
 import net.bytebuddy.agent.builder.AgentBuilder;
+import net.bytebuddy.agent.builder.AgentBuilder.RedefinitionStrategy;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.matcher.ElementMatcher;
@@ -23,10 +24,17 @@ public class AgentMain {
 
     public static void premain(String agentArgs, Instrumentation inst) {
         System.out.println("[OSRS Helper Agent] Agent started. Initializing ByteBuddy...");
-        // Install generic reusable hook with detailed ByteBuddy logging
+        // Log all loaded classes containing 'runelite' to check class loading order
+        for (Class<?> loaded : inst.getAllLoadedClasses()) {
+            if (loaded.getName().toLowerCase().contains("runelite")) {
+                System.out.println("[OSRS Helper Agent] Already loaded: " + loaded.getName());
+            }
+        }
+        // Install generic reusable hook with detailed ByteBuddy logging and retransformation
         new AgentBuilder.Default()
             .with(AgentBuilder.Listener.StreamWriting.toSystemOut())
             .with(AgentBuilder.InstallationListener.StreamWriting.toSystemOut())
+            .with(RedefinitionStrategy.RETRANSFORMATION)
             .type(ElementMatchers.nameContainsIgnoreCase("runelite"))
             .transform(new GenericHook(ElementMatchers.any()))
             .type(ElementMatchers.named("net.runelite.client.input.MouseManager"))
