@@ -1,14 +1,25 @@
 package com.osrs.agent;
 
 import net.bytebuddy.agent.builder.AgentBuilder;
-import net.bytebuddy.agent.builder.AgentBuilder.RedefinitionStrategy;
 import net.bytebuddy.asm.Advice;
+import net.bytebuddy.matcher.ElementMatchers;
+import net.bytebuddy.asm.AsmVisitorWrapper;
+import net.bytebuddy.jar.asm.ClassVisitor;
+import net.bytebuddy.jar.asm.MethodVisitor;
+import net.bytebuddy.jar.asm.Opcodes;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.matcher.ElementMatcher;
-import net.bytebuddy.matcher.ElementMatchers;
-import net.bytebuddy.implementation.MemberSubstitution;
+import net.bytebuddy.description.field.FieldList;
+import net.bytebuddy.description.field.FieldDescription;
+import net.bytebuddy.description.type.TypeDescription;
+import net.bytebuddy.description.method.MethodList;
+import net.bytebuddy.pool.TypePool;
+import net.bytebuddy.implementation.Implementation;
+import net.bytebuddy.implementation.MethodDelegation;
 
 import java.lang.instrument.Instrumentation;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 
 public class AgentMain {
     // Toggle for enabling/disabling automation
@@ -50,8 +61,7 @@ public class AgentMain {
         new AgentBuilder.Default()
             .type(ElementMatchers.nameContainsIgnoreCase("runelite"))
             .transform(new GenericHook(ElementMatchers.any()))
-            .type(ElementMatchers.named("net.runelite.client.callback.Hooks"))
-            .transform(new HooksReflectionAccessFix())
+            // Removed HooksReflectionAccessFix transformer to avoid MemberSubstitution
             .type(ElementMatchers.named("net.runelite.client.input.MouseManager"))
             .transform(new MouseAutomationHook())
             .type(ElementMatchers.named("net.runelite.client.callback.Hooks"))
@@ -61,6 +71,15 @@ public class AgentMain {
             .transform((builder, typeDescription, classLoader, module, pd) ->
                 builder.visit(Advice.to(RuneLiteMainAdvice.class).on(ElementMatchers.named("main")))
             )
+            // Patch InjectorImpl methods to be public to avoid IllegalAccessException (ASM-based)
+            .type(ElementMatchers.named("com.google.inject.internal.InjectorImpl"))
+            .transform(new InjectorImplAsmAccessPatch())
+            // Inject proxy method into InjectorImpl for safe reflection
+            .type(ElementMatchers.named("com.google.inject.internal.InjectorImpl"))
+            .transform(new InjectorImplProxyMethodPatch())
+            // Patch Hooks to use proxy method instead of Method.invoke
+            .type(ElementMatchers.named("net.runelite.client.callback.Hooks"))
+            .transform(new HooksInvokePatch())
             .installOn(inst);
     }
 
@@ -122,6 +141,96 @@ public class AgentMain {
         } catch (Exception e) {
             System.out.println("[OSRS Helper Agent] Exception during overlay registration:");
             e.printStackTrace();
+        }
+    }
+
+    /**
+     * ASM-based ByteBuddy transformer to make all methods in InjectorImpl public.
+     */
+    public static class InjectorImplAsmAccessPatch implements AgentBuilder.Transformer {
+        @Override
+        public net.bytebuddy.dynamic.DynamicType.Builder<?> transform(
+                net.bytebuddy.dynamic.DynamicType.Builder<?> builder,
+                net.bytebuddy.description.type.TypeDescription typeDescription,
+                ClassLoader classLoader,
+                net.bytebuddy.utility.JavaModule module,
+                java.security.ProtectionDomain protectionDomain) {
+            return builder.visit(new AsmVisitorWrapper.AbstractBase() {
+                @Override
+                public ClassVisitor wrap(
+                        TypeDescription instrumentedType,
+                        ClassVisitor classVisitor,
+                        Implementation.Context implementationContext,
+                        TypePool typePool,
+                        FieldList<FieldDescription.InDefinedShape> fields,
+                        MethodList<?> methods,
+                        int writerFlags,
+                        int readerFlags) {
+                    return new ClassVisitor(Opcodes.ASM9, classVisitor) {
+                        @Override
+                        public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
+                            access = (access & ~Opcodes.ACC_PRIVATE & ~Opcodes.ACC_PROTECTED) | Opcodes.ACC_PUBLIC;
+                            return super.visitMethod(access, name, descriptor, signature, exceptions);
+                        }
+                    };
+                }
+            });
+        }
+    }
+
+    /**
+     * ByteBuddy transformer to add a public static proxy method to InjectorImpl for safe reflection.
+     */
+    public static class InjectorImplProxyMethodPatch implements AgentBuilder.Transformer {
+        @Override
+        public net.bytebuddy.dynamic.DynamicType.Builder<?> transform(
+                net.bytebuddy.dynamic.DynamicType.Builder<?> builder,
+                net.bytebuddy.description.type.TypeDescription typeDescription,
+                ClassLoader classLoader,
+                net.bytebuddy.utility.JavaModule module,
+                java.security.ProtectionDomain protectionDomain) {
+            return builder.defineMethod(
+                    "invokeWithAccess",
+                    Object.class,
+                    Modifier.PUBLIC | Modifier.STATIC)
+                .withParameters(Method.class, Object.class, Object[].class)
+                .intercept(MethodDelegation.to(InvokeWithAccessDelegate.class));
+        }
+    }
+
+    /**
+     * Delegate for the proxy method. Calls setAccessible(true) and invokes the method.
+     */
+    public static class InvokeWithAccessDelegate {
+        public static Object invokeWithAccess(Method method, Object obj, Object[] args) throws Throwable {
+            method.setAccessible(true);
+            return method.invoke(obj, args);
+        }
+    }
+
+    /**
+     * ByteBuddy transformer to patch Hooks: replace Method.invoke with InjectorImpl.invokeWithAccess.
+     */
+    public static class HooksInvokePatch implements AgentBuilder.Transformer {
+        @Override
+        public net.bytebuddy.dynamic.DynamicType.Builder<?> transform(
+                net.bytebuddy.dynamic.DynamicType.Builder<?> builder,
+                net.bytebuddy.description.type.TypeDescription typeDescription,
+                ClassLoader classLoader,
+                net.bytebuddy.utility.JavaModule module,
+                java.security.ProtectionDomain protectionDomain) {
+            return builder.visit(
+                net.bytebuddy.asm.MemberSubstitution.strict()
+                    .method(ElementMatchers.named("invoke")
+                        .and(ElementMatchers.takesArguments(Object.class, Object[].class))
+                        .and(ElementMatchers.isDeclaredBy(Method.class)))
+                    .replaceWith(
+                        typeDescription.getDeclaredMethods()
+                            .filter(ElementMatchers.named("invokeWithAccess"))
+                            .getOnly()
+                    )
+                    .on(ElementMatchers.any())
+            );
         }
     }
 
@@ -491,34 +600,6 @@ public class AgentMain {
                 net.bytebuddy.utility.JavaModule module,
                 java.security.ProtectionDomain protectionDomain) {
             return builder.visit(Advice.to(GameTickAutomationAdvice.class).on(ElementMatchers.named("tick")));
-        }
-    }
-
-    /**
-     * Transformer for reflection access fix in Hooks.tick.
-     */
-    public static class HooksReflectionAccessFix implements AgentBuilder.Transformer {
-        @Override
-        public net.bytebuddy.dynamic.DynamicType.Builder<?> transform(
-                net.bytebuddy.dynamic.DynamicType.Builder<?> builder,
-                net.bytebuddy.description.type.TypeDescription typeDescription,
-                ClassLoader classLoader,
-                net.bytebuddy.utility.JavaModule module,
-                java.security.ProtectionDomain protectionDomain) {
-            // Substitute Method.invoke with our wrapper that sets accessible
-            return builder.method(ElementMatchers.named("tick"))
-                .intercept(MemberSubstitution.relaxed()
-                    .method(ElementMatchers.named("invoke")
-                        .and(ElementMatchers.takesArguments(Object.class, Object[].class))
-                        .and(ElementMatchers.isDeclaredBy(java.lang.reflect.Method.class)))
-                    .replaceWith(HooksReflectionAccessFix.class.getDeclaredMethod("invokeWithAccess", java.lang.reflect.Method.class, Object.class, Object[].class))
-                );
-        }
-
-        // Wrapper for Method.invoke that sets accessible
-        public static Object invokeWithAccess(java.lang.reflect.Method method, Object obj, Object[] args) throws Throwable {
-            method.setAccessible(true);
-            return method.invoke(obj, args);
         }
     }
 }

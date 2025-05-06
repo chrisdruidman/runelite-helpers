@@ -70,6 +70,7 @@ public class RuneLiteCustomLauncher {
         jvmArgs.add("-Drunelite.launcher.version=" + launcherVersion);
         jvmArgs.add("-javaagent:" + AGENT_JAR);
         // Add --add-opens for Guice reflection access (Java 9+)
+        jvmArgs.add("--add-opens=net.runelite.client/com.google.inject.internal=ALL-UNNAMED");
         jvmArgs.add("--add-opens=ALL-UNNAMED/com.google.inject.internal=ALL-UNNAMED");
         jvmArgs.add("--add-opens=ALL-UNNAMED/com.google.inject=ALL-UNNAMED");
         jvmArgs.add("--add-opens=ALL-UNNAMED/com.google.inject.spi=ALL-UNNAMED");
