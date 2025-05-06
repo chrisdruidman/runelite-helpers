@@ -32,6 +32,8 @@ public class AutomationOverlay extends Overlay implements MouseListener {
 
     @Override
     public Dimension render(Graphics2D graphics) {
+        // Ensure overlay bounds always match the drawn area for mouse event routing
+        this.getBounds().setBounds(0, 0, 220, 110);
         panel.getChildren().clear();
         panel.getChildren().add(TitleComponent.builder().text("OSRS Agent Automation").build());
         panel.getChildren().add(LineComponent.builder()
