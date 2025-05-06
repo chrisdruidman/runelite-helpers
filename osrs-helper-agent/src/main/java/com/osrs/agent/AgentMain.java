@@ -303,12 +303,12 @@ public class AgentMain {
                                         // Convert world location to screen coordinates using Perspective.localToCanvas
                                         // This requires the client, the object's local location, and the current plane
                                         Object localPoint = obj.getClass().getMethod("getLocalLocation").invoke(obj);
-                                        int plane = (int) client.getClass().getMethod("getPlane").invoke(client);
+                                        int plane2 = (int) client.getClass().getMethod("getPlane").invoke(client);
                                         Class<?> perspectiveClass = Class.forName("net.runelite.api.Perspective");
                                         java.awt.Point canvasPoint = (java.awt.Point) perspectiveClass.getMethod(
                                             "localToCanvas", Class.forName("net.runelite.api.Client"),
                                             Class.forName("net.runelite.api.coords.LocalPoint"), int.class)
-                                            .invoke(null, client, localPoint, plane);
+                                            .invoke(null, client, localPoint, plane2);
                                         if (canvasPoint != null) {
                                             int screenX = canvasPoint.x;
                                             int screenY = canvasPoint.y;
@@ -367,12 +367,12 @@ public class AgentMain {
                     .newInstance(startX, startY, 0);
                 Object localPoint = worldPointClass.getMethod("toLocalInstance", Class.forName("net.runelite.api.Client"), boolean.class)
                     .invoke(startPoint, client, false);
-                int plane = 0;
+                int planeStart = 0;
                 Class<?> perspectiveClass = Class.forName("net.runelite.api.Perspective");
                 java.awt.Point canvasPoint = (java.awt.Point) perspectiveClass.getMethod(
                     "localToCanvas", Class.forName("net.runelite.api.Client"),
                     Class.forName("net.runelite.api.coords.LocalPoint"), int.class)
-                    .invoke(null, client, localPoint, plane);
+                    .invoke(null, client, localPoint, planeStart);
                 if (canvasPoint != null) {
                     triggerMouseAutomation(canvasPoint.x, canvasPoint.y);
                 }
