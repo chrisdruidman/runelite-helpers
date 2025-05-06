@@ -26,8 +26,11 @@ public class RuneLiteCustomLauncher {
         JSONObject clientObj = json.getJSONObject("client");
         String clientUrl = clientObj.getString("jar");
         String clientHash = clientObj.getString("sha256");
+        // Get the launcher version from bootstrap.json
+        String launcherVersion = json.getJSONObject("launcher").getString("version");
         System.out.println("[Launcher] Latest client jar: " + clientUrl);
         System.out.println("[Launcher] Expected SHA-256: " + clientHash);
+        System.out.println("[Launcher] Launcher version: " + launcherVersion);
 
         // Download client jar if needed
         File clientJar = new File(CLIENT_JAR_NAME);
@@ -59,7 +62,7 @@ public class RuneLiteCustomLauncher {
         jvmArgs.add("-XX:CompileThreshold=1500");
         jvmArgs.add("-Dsun.java2d.d3d=true");
         jvmArgs.add("-Dsun.java2d.opengl=false");
-        jvmArgs.add("-Drunelite.launcher.version=2.7.4");
+        jvmArgs.add("-Drunelite.launcher.version=" + launcherVersion);
         jvmArgs.add("-XX:ErrorFile=" + System.getenv("USERPROFILE") + "\\.runelite\\logs\\jvm_crash_pid_%p.log");
         jvmArgs.add("-javaagent:" + AGENT_JAR);
 
