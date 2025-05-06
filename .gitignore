@@ -19,3 +19,6 @@ runelite/
 
 # Ignore OS-specific files
 Thumbs.db
+
+# Ignore launcher output log
+osrs-helper-launcher/launcher-output.txt
