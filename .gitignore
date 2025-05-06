@@ -14,5 +14,8 @@ runelite/
 .DS_Store
 .vscode/
 
+# Ignore Maven target directories
+**/target/
+
 # Ignore OS-specific files
 Thumbs.db
