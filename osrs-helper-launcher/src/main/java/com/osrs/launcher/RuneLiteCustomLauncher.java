@@ -11,6 +11,7 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 import org.json.JSONObject;
 
 public class RuneLiteCustomLauncher {
@@ -22,11 +23,35 @@ public class RuneLiteCustomLauncher {
         System.out.println("[Launcher] Downloading bootstrap.json...");
         String bootstrapJson = readUrl(BOOTSTRAP_URL);
         JSONObject json = new JSONObject(bootstrapJson);
-        // Get the first artifact for the latest client
-        JSONObject clientArtifact = json.getJSONArray("artifacts").getJSONObject(0);
-        String clientUrl = clientArtifact.getString("path");
-        String clientHash = clientArtifact.getString("hash");
-        String clientJarName = clientArtifact.getString("name");
+
+        // Download all artifacts and build classpath
+        List<String> classpathJars = new ArrayList<>();
+        for (Object artifactObj : json.getJSONArray("artifacts")) {
+            JSONObject artifact = (JSONObject) artifactObj;
+            String jarUrl = artifact.getString("path");
+            String jarHash = artifact.getString("hash");
+            String jarName = artifact.getString("name");
+            File jarFile = new File(jarName);
+            boolean needsDownload = true;
+            if (jarFile.exists()) {
+                String localHash = sha256(jarFile.getAbsolutePath());
+                if (localHash.equalsIgnoreCase(jarHash)) {
+                    needsDownload = false;
+                } else {
+                    System.out.println("[Launcher] Hash mismatch for " + jarName + ", re-downloading...");
+                }
+            }
+            if (needsDownload) {
+                downloadFile(jarUrl, jarName);
+                String downloadedHash = sha256(jarFile.getAbsolutePath());
+                if (!downloadedHash.equalsIgnoreCase(jarHash)) {
+                    throw new RuntimeException("Downloaded " + jarName + " hash does not match expected SHA-256!");
+                }
+                System.out.println("[Launcher] Downloaded and verified " + jarName);
+            }
+            classpathJars.add(jarName);
+        }
+
         // Get client JVM arguments
         List<String> jvmArgs = new ArrayList<>();
         if (json.has("clientJvmArguments")) {
@@ -34,53 +59,27 @@ public class RuneLiteCustomLauncher {
                 jvmArgs.add(arg.toString());
             }
         }
+        // Remove unsupported JVM args for Java 11+
+        jvmArgs.removeIf(arg -> arg.equals("-Xincgc") || arg.equals("-XX:+UseConcMarkSweepGC") || arg.equals("-XX:+UseParNewGC"));
+
         // Get the launcher version (fallback to hardcoded if not present)
         String launcherVersion = "2.7.4";
-        if (json.has("launcher")) {
-            launcherVersion = json.getJSONObject("launcher").optString("version", launcherVersion);
-        } else if (json.has("version")) {
-            // Only use top-level version if it looks like a launcher version (e.g., contains a dot and is not client version)
-            String v = json.getString("version");
-            if (v.matches("\\d+\\.\\d+\\.\\d+")) {
-                launcherVersion = v;
-            }
-        }
-        System.out.println("[Launcher] Latest client jar: " + clientUrl);
-        System.out.println("[Launcher] Expected SHA-256: " + clientHash);
         System.out.println("[Launcher] Launcher version: " + launcherVersion);
-
-        // Download client jar if needed
-        File clientJar = new File(clientJarName);
-        boolean needsDownload = true;
-        if (clientJar.exists()) {
-            String localHash = sha256(clientJar.getAbsolutePath());
-            System.out.println("[Launcher] Local client jar SHA-256: " + localHash);
-            if (localHash.equalsIgnoreCase(clientHash)) {
-                System.out.println("[Launcher] Local client jar is up to date.");
-                needsDownload = false;
-            } else {
-                System.out.println("[Launcher] Local client jar hash mismatch, re-downloading...");
-            }
-        }
-        if (needsDownload) {
-            downloadFile(clientUrl, clientJarName);
-            String downloadedHash = sha256(clientJar.getAbsolutePath());
-            if (!downloadedHash.equalsIgnoreCase(clientHash)) {
-                throw new RuntimeException("Downloaded client jar hash does not match expected SHA-256!");
-            }
-            System.out.println("[Launcher] Downloaded and verified client jar.");
-        }
 
         // Add agent and launcher version JVM args
         jvmArgs.add("-Drunelite.launcher.version=" + launcherVersion);
         jvmArgs.add("-javaagent:" + AGENT_JAR);
 
+        // Build the classpath (Windows uses ';' as separator)
+        String classpath = classpathJars.stream().collect(Collectors.joining(";"));
+
         // Build the command
         List<String> command = new ArrayList<>();
         command.add(javaBin());
         command.addAll(jvmArgs);
-        command.add("-jar");
-        command.add(clientJarName);
+        command.add("-cp");
+        command.add(classpath);
+        command.add("net.runelite.client.RuneLite");
         for (String arg : args) {
             command.add(arg);
         }
@@ -89,10 +88,12 @@ public class RuneLiteCustomLauncher {
             System.out.print(part + " ");
         }
         System.out.println();
+        // Start the process and print exit code
         ProcessBuilder pb = new ProcessBuilder(command);
         pb.inheritIO();
         Process process = pb.start();
-        process.waitFor();
+        int exitCode = process.waitFor();
+        System.out.println("[Launcher] RuneLite client process exited with code: " + exitCode);
     }
 
     private static String javaBin() {
