@@ -34,6 +34,31 @@ public class AgentMain {
             .installOn(inst);
     }
 
+    public static void registerOverlay() {
+        try {
+            // Get the RuneLite injector
+            Class<?> runeLiteClass = Class.forName("net.runelite.client.RuneLite");
+            java.lang.reflect.Field injectorField = runeLiteClass.getDeclaredField("injector");
+            injectorField.setAccessible(true);
+            Object injector = injectorField.get(null);
+            if (injector == null) return;
+            // Get OverlayManager instance
+            Object overlayManager = injector.getClass().getMethod("getInstance", Class.class)
+                .invoke(injector, Class.forName("net.runelite.client.ui.overlay.OverlayManager"));
+            if (overlayManager == null) return;
+            // Create AutomationOverlay instance
+            Class<?> overlayClass = Class.forName("com.osrs.agent.AutomationOverlay");
+            Object overlay = overlayClass.getConstructor().newInstance();
+            // Inject dependencies if needed
+            injector.getClass().getMethod("injectMembers", Object.class).invoke(injector, overlay);
+            // Register overlay
+            overlayManager.getClass().getMethod("add", Class.forName("net.runelite.client.ui.overlay.Overlay")).invoke(overlayManager, overlay);
+            System.out.println("[OSRS Helper Agent] AutomationOverlay registered.");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     /**
      * Generic reusable transformer for method entry/exit hooks.
      */
@@ -185,9 +210,15 @@ public class AgentMain {
      * Advice for per-tick automation logic.
      */
     public static class GameTickAutomationAdvice {
+        private static volatile boolean overlayRegistered = false;
+
         @Advice.OnMethodEnter
         static void onEnter() {
             if (!AgentMain.isAutomationEnabled()) return;
+            if (!overlayRegistered) {
+                AgentMain.registerOverlay();
+                overlayRegistered = true;
+            }
             try {
                 // Use reflection to get the RuneLite client instance
                 Class<?> clientClass = Class.forName("net.runelite.client.RuneLite");
