@@ -17,6 +17,22 @@
             <artifactId>byte-buddy</artifactId>
             <version>1.14.12</version>
         </dependency>
+        <!-- RuneLite API dependency -->
+        <dependency>
+            <groupId>net.runelite</groupId>
+            <artifactId>runelite-api</artifactId>
+            <version>1.10.20</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/../runelite-api/target/runelite-api-1.10.20.jar</systemPath>
+        </dependency>
+        <!-- RuneLite Client dependency -->
+        <dependency>
+            <groupId>net.runelite</groupId>
+            <artifactId>runelite-client</artifactId>
+            <version>1.10.20</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/../runelite-client/target/runelite-client-1.10.20.jar</systemPath>
+        </dependency>
     </dependencies>
     <build>
         <plugins>

@@ -74,7 +74,8 @@ public class AgentMain {
                 net.bytebuddy.dynamic.DynamicType.Builder<?> builder,
                 net.bytebuddy.description.type.TypeDescription typeDescription,
                 ClassLoader classLoader,
-                java.lang.module.Module module) {
+                net.bytebuddy.utility.JavaModule module,
+                java.security.ProtectionDomain protectionDomain) {
             return builder.visit(Advice.to(GenericAdvice.class).on(methodMatcher));
         }
     }
@@ -102,7 +103,8 @@ public class AgentMain {
                 net.bytebuddy.dynamic.DynamicType.Builder<?> builder,
                 net.bytebuddy.description.type.TypeDescription typeDescription,
                 ClassLoader classLoader,
-                java.lang.module.Module module) {
+                net.bytebuddy.utility.JavaModule module,
+                java.security.ProtectionDomain protectionDomain) {
             // Target mouse event processing methods
             return builder
                 .visit(Advice.to(MouseAutomationAdvice.class).on(
@@ -415,7 +417,8 @@ public class AgentMain {
                 net.bytebuddy.dynamic.DynamicType.Builder<?> builder,
                 net.bytebuddy.description.type.TypeDescription typeDescription,
                 ClassLoader classLoader,
-                java.lang.module.Module module) {
+                net.bytebuddy.utility.JavaModule module,
+                java.security.ProtectionDomain protectionDomain) {
             return builder.visit(Advice.to(GameTickAutomationAdvice.class).on(ElementMatchers.named("tick")));
         }
     }
