@@ -108,6 +108,14 @@ public class AgentMain {
             // Register overlay
             overlayManager.getClass().getMethod("add", Class.forName("net.runelite.client.ui.overlay.Overlay")).invoke(overlayManager, overlay);
             System.out.println("[OSRS Helper Agent] AutomationOverlay registered successfully.");
+            // Register overlay as a mouse listener with MouseManager
+            Object mouseManager = getInstanceMethod.invoke(injector, Class.forName("net.runelite.client.input.MouseManager"));
+            if (mouseManager != null) {
+                mouseManager.getClass().getMethod("registerMouseListener", Class.forName("net.runelite.client.input.MouseListener")).invoke(mouseManager, overlay);
+                System.out.println("[OSRS Helper Agent] AutomationOverlay registered as MouseListener.");
+            } else {
+                System.out.println("[OSRS Helper Agent] MouseManager is null, could not register overlay as MouseListener.");
+            }
         } catch (Exception e) {
             System.out.println("[OSRS Helper Agent] Exception during overlay registration:");
             e.printStackTrace();
