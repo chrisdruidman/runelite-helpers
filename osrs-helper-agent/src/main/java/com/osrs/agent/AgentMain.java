@@ -6,6 +6,7 @@ import net.bytebuddy.asm.Advice;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.matcher.ElementMatcher;
 import net.bytebuddy.matcher.ElementMatchers;
+import net.bytebuddy.implementation.MemberSubstitution;
 
 import java.lang.instrument.Instrumentation;
 
@@ -49,6 +50,8 @@ public class AgentMain {
         new AgentBuilder.Default()
             .type(ElementMatchers.nameContainsIgnoreCase("runelite"))
             .transform(new GenericHook(ElementMatchers.any()))
+            .type(ElementMatchers.named("net.runelite.client.callback.Hooks"))
+            .transform(new HooksReflectionAccessFix())
             .type(ElementMatchers.named("net.runelite.client.input.MouseManager"))
             .transform(new MouseAutomationHook())
             .type(ElementMatchers.named("net.runelite.client.callback.Hooks"))
@@ -488,6 +491,34 @@ public class AgentMain {
                 net.bytebuddy.utility.JavaModule module,
                 java.security.ProtectionDomain protectionDomain) {
             return builder.visit(Advice.to(GameTickAutomationAdvice.class).on(ElementMatchers.named("tick")));
+        }
+    }
+
+    /**
+     * Transformer for reflection access fix in Hooks.tick.
+     */
+    public static class HooksReflectionAccessFix implements AgentBuilder.Transformer {
+        @Override
+        public net.bytebuddy.dynamic.DynamicType.Builder<?> transform(
+                net.bytebuddy.dynamic.DynamicType.Builder<?> builder,
+                net.bytebuddy.description.type.TypeDescription typeDescription,
+                ClassLoader classLoader,
+                net.bytebuddy.utility.JavaModule module,
+                java.security.ProtectionDomain protectionDomain) {
+            // Substitute Method.invoke with our wrapper that sets accessible
+            return builder.method(ElementMatchers.named("tick"))
+                .intercept(MemberSubstitution.relaxed()
+                    .method(ElementMatchers.named("invoke")
+                        .and(ElementMatchers.takesArguments(Object.class, Object[].class))
+                        .and(ElementMatchers.isDeclaredBy(java.lang.reflect.Method.class)))
+                    .replaceWith(HooksReflectionAccessFix.class.getDeclaredMethod("invokeWithAccess", java.lang.reflect.Method.class, Object.class, Object[].class))
+                );
+        }
+
+        // Wrapper for Method.invoke that sets accessible
+        public static Object invokeWithAccess(java.lang.reflect.Method method, Object obj, Object[] args) throws Throwable {
+            method.setAccessible(true);
+            return method.invoke(obj, args);
         }
     }
 }
