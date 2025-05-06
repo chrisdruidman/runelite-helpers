@@ -32,6 +32,7 @@ public class AutomationOverlay extends Overlay {
 
     @Override
     public Dimension render(Graphics2D graphics) {
+        System.out.println("[AutomationOverlay] render() called");
         panel.getChildren().clear();
         panel.getChildren().add(TitleComponent.builder().text("OSRS Agent Automation").build());
         panel.getChildren().add(LineComponent.builder()

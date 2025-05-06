@@ -31,30 +31,58 @@ public class AgentMain {
             .transform(new MouseAutomationHook())
             .type(ElementMatchers.named("net.runelite.client.callback.Hooks"))
             .transform(new GameTickHook())
+            // Hook RuneLite.main to register overlay after client startup
+            .type(ElementMatchers.named("net.runelite.client.RuneLite"))
+            .transform((builder, typeDescription, classLoader, module, pd) ->
+                builder.visit(Advice.to(RuneLiteMainAdvice.class).on(ElementMatchers.named("main")))
+            )
             .installOn(inst);
+    }
+
+    // Advice to run after RuneLite.main executes
+    public static class RuneLiteMainAdvice {
+        @Advice.OnMethodExit
+        static void onExit() {
+            System.out.println("[OSRS Helper Agent] RuneLite.main finished, registering overlay...");
+            registerOverlay();
+        }
     }
 
     public static void registerOverlay() {
         try {
+            System.out.println("[OSRS Helper Agent] Attempting to register overlay...");
             // Get the RuneLite injector
             Class<?> runeLiteClass = Class.forName("net.runelite.client.RuneLite");
+            System.out.println("[OSRS Helper Agent] Loaded RuneLite class: " + runeLiteClass);
             java.lang.reflect.Field injectorField = runeLiteClass.getDeclaredField("injector");
             injectorField.setAccessible(true);
             Object injector = injectorField.get(null);
-            if (injector == null) return;
+            System.out.println("[OSRS Helper Agent] Injector: " + injector);
+            if (injector == null) {
+                System.out.println("[OSRS Helper Agent] Injector is null, aborting overlay registration.");
+                return;
+            }
             // Get OverlayManager instance
             Object overlayManager = injector.getClass().getMethod("getInstance", Class.class)
                 .invoke(injector, Class.forName("net.runelite.client.ui.overlay.OverlayManager"));
-            if (overlayManager == null) return;
+            System.out.println("[OSRS Helper Agent] OverlayManager: " + overlayManager);
+            if (overlayManager == null) {
+                System.out.println("[OSRS Helper Agent] OverlayManager is null, aborting overlay registration.");
+                return;
+            }
             // Create AutomationOverlay instance
             Class<?> overlayClass = Class.forName("com.osrs.agent.AutomationOverlay");
+            System.out.println("[OSRS Helper Agent] Loaded AutomationOverlay class: " + overlayClass);
             Object overlay = overlayClass.getConstructor().newInstance();
+            System.out.println("[OSRS Helper Agent] Created overlay instance: " + overlay);
             // Inject dependencies if needed
             injector.getClass().getMethod("injectMembers", Object.class).invoke(injector, overlay);
+            System.out.println("[OSRS Helper Agent] Dependencies injected into overlay.");
             // Register overlay
             overlayManager.getClass().getMethod("add", Class.forName("net.runelite.client.ui.overlay.Overlay")).invoke(overlayManager, overlay);
-            System.out.println("[OSRS Helper Agent] AutomationOverlay registered.");
+            System.out.println("[OSRS Helper Agent] AutomationOverlay registered successfully.");
         } catch (Exception e) {
+            System.out.println("[OSRS Helper Agent] Exception during overlay registration:");
             e.printStackTrace();
         }
     }
