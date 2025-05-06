@@ -196,6 +196,16 @@ public class AgentMain {
                 int playerX = (int) worldLocation.getClass().getMethod("getX").invoke(worldLocation);
                 int playerY = (int) worldLocation.getClass().getMethod("getY").invoke(worldLocation);
 
+                // Detect if player has fallen off the course (placeholder logic)
+                if (hasFallenOffCourse(player, worldLocation)) {
+                    // Example: Set course start location (replace with actual course start for each course)
+                    int startX = 3267; // Example: Seers' Village start X
+                    int startY = 3488; // Example: Seers' Village start Y
+                    navigateToCourseStart(client, startX, startY);
+                    System.out.println("[AgilityAutomation] Detected fall, navigating back to course start");
+                    return;
+                }
+
                 // Get all game objects (tiles)
                 Object scene = client.getClass().getMethod("getScene").invoke(client);
                 if (scene == null) return;
@@ -270,11 +280,74 @@ public class AgentMain {
             }
         }
 
+        // Placeholder: Detect if player has fallen off the course
+        private static boolean hasFallenOffCourse(Object player, Object worldLocation) {
+            try {
+                // 1. Animation-based detection (fall animation for agility is 827)
+                int animation = (int) player.getClass().getMethod("getAnimation").invoke(player);
+                if (animation == 827) {
+                    System.out.println("[AgilityAutomation] Detected fall animation.");
+                    return true;
+                }
+                // 2. Rooftop whitelist: Only allow known Canifis rooftop tiles
+                int x = (int) worldLocation.getClass().getMethod("getX").invoke(worldLocation);
+                int y = (int) worldLocation.getClass().getMethod("getY").invoke(worldLocation);
+                int z = (int) worldLocation.getClass().getMethod("getPlane").invoke(worldLocation);
+                if (z != 1) {
+                    // Not on rooftop plane
+                    System.out.println("[AgilityAutomation] Player not on rooftop plane.");
+                    return true;
+                }
+                // Canifis rooftop tile whitelist (bounding box for simplicity)
+                if (x < 3495 || x > 3520 || y < 3465 || y > 3500) {
+                    System.out.println("[AgilityAutomation] Player outside Canifis rooftop bounds.");
+                    return true;
+                }
+                // 3. (Optional) Add chat message detection for falls if needed
+            } catch (Exception ignored) {}
+            return false;
+        }
+
+        // Simulate navigation to course start
+        private static void navigateToCourseStart(Object client, int startX, int startY) {
+            // Canifis course start tile: (3508, 3488, 0)
+            startX = 3508;
+            startY = 3488;
+            // Convert world coordinates to screen coordinates
+            try {
+                Class<?> worldPointClass = Class.forName("net.runelite.api.coords.WorldPoint");
+                Object startPoint = worldPointClass.getConstructor(int.class, int.class, int.class)
+                    .newInstance(startX, startY, 0);
+                Object localPoint = worldPointClass.getMethod("toLocalInstance", Class.forName("net.runelite.api.Client"), boolean.class)
+                    .invoke(startPoint, client, false);
+                int plane = 0;
+                Class<?> perspectiveClass = Class.forName("net.runelite.api.Perspective");
+                java.awt.Point canvasPoint = (java.awt.Point) perspectiveClass.getMethod(
+                    "localToCanvas", Class.forName("net.runelite.api.Client"),
+                    Class.forName("net.runelite.api.coords.LocalPoint"), int.class)
+                    .invoke(null, client, localPoint, plane);
+                if (canvasPoint != null) {
+                    triggerMouseAutomation(canvasPoint.x, canvasPoint.y);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
         // Example: Replace with actual obstacle ID check
         private static boolean isAgilityObstacle(int id) {
-            // TODO: Use real obstacle IDs from Obstacles.java
-            int[] exampleObstacleIds = { 10093, 10094, 10095, 10096, 10097, 10098 };
-            for (int oid : exampleObstacleIds) {
+            // Canifis rooftop course obstacle IDs (from RuneLite Obstacles.java / OSRS Wiki)
+            int[] canifisObstacleIds = {
+                10819, // Tall tree
+                10820, // Gap (first)
+                10821, // Gap (second)
+                10828, // Gap (third)
+                10822, // Gap (fourth)
+                10831, // Pole-vault
+                10823, // Gap (fifth)
+                10830  // Gap (final)
+            };
+            for (int oid : canifisObstacleIds) {
                 if (id == oid) return true;
             }
             return false;
