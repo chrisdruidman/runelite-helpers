@@ -30,6 +30,9 @@ public class AgentMain {
         System.out.println("[OSRS Helper Agent] JVM Args: " + java.lang.management.ManagementFactory.getRuntimeMXBean().getInputArguments());
         // Print retransformation support
         System.out.println("[OSRS Helper Agent] isRetransformClassesSupported: " + inst.isRetransformClassesSupported());
+        if (!inst.isRetransformClassesSupported()) {
+            System.out.println("[OSRS Helper Agent] WARNING: JVM does not support retransformation. The agent will only work if loaded before any RuneLite classes. If you are using a launcher or wrapper, it may preload classes and prevent the agent from working.");
+        }
         // Print total loaded classes and a sample
         Class<?>[] loaded = inst.getAllLoadedClasses();
         System.out.println("[OSRS Helper Agent] Loaded class count: " + loaded.length);
@@ -42,11 +45,10 @@ public class AgentMain {
                 System.out.println("[OSRS Helper Agent] Already loaded: " + clazz.getName());
             }
         }
-        // Install generic reusable hook with detailed ByteBuddy logging and retransformation
+        // Install generic reusable hook with detailed ByteBuddy logging
         new AgentBuilder.Default()
             .with(AgentBuilder.Listener.StreamWriting.toSystemOut())
             .with(AgentBuilder.InstallationListener.StreamWriting.toSystemOut())
-            .with(RedefinitionStrategy.RETRANSFORMATION)
             .type(ElementMatchers.nameContainsIgnoreCase("runelite"))
             .transform(new GenericHook(ElementMatchers.any()))
             .type(ElementMatchers.named("net.runelite.client.input.MouseManager"))
