@@ -6,7 +6,7 @@ REM mvn -f "%~dp0pom.xml" package
 REM Run the launcher
 java -jar target\osrs-helper-launcher-1.0-SNAPSHOT.jar > launcher-output.txt
 
-type launcher-output.txt
+REM type launcher-output.txt
 pause
 
 endlocal

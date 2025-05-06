@@ -69,6 +69,12 @@ public class RuneLiteCustomLauncher {
         // Add agent and launcher version JVM args
         jvmArgs.add("-Drunelite.launcher.version=" + launcherVersion);
         jvmArgs.add("-javaagent:" + AGENT_JAR);
+        // Add --add-opens for Guice reflection access (Java 9+)
+        jvmArgs.add("--add-opens=ALL-UNNAMED/com.google.inject.internal=ALL-UNNAMED");
+        jvmArgs.add("--add-opens=java.base/java.lang=ALL-UNNAMED");
+        jvmArgs.add("--add-opens=java.base/java.lang.reflect=ALL-UNNAMED");
+        jvmArgs.add("--add-opens=java.base/java.util=ALL-UNNAMED");
+        jvmArgs.add("--add-opens=java.base/sun.reflect=ALL-UNNAMED");
 
         // Build the classpath (Windows uses ';' as separator)
         String classpath = classpathJars.stream().collect(Collectors.joining(";"));

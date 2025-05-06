@@ -1,57 +1,66 @@
 package com.osrs.agent;
 
 import net.runelite.api.Client;
+import net.runelite.api.MenuAction;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
+import net.runelite.client.ui.overlay.OverlayMenuEntry;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.components.PanelComponent;
 import net.runelite.client.ui.overlay.components.TitleComponent;
 import net.runelite.client.ui.overlay.components.LineComponent;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 
 public class AutomationOverlay extends Overlay {
     private final PanelComponent panel = new PanelComponent();
-    private boolean buttonHovered = false;
-    private Rectangle buttonBounds = new Rectangle(0, 0, 120, 24);
+    private Rectangle buttonBounds = new Rectangle(0, 0, 180, 32);
+    private static final String BUTTON_TEXT_ENABLED = "Disable Automation";
+    private static final String BUTTON_TEXT_DISABLED = "Enable Automation";
 
     public AutomationOverlay() {
         setPosition(OverlayPosition.TOP_LEFT);
         setLayer(OverlayLayer.ABOVE_WIDGETS);
-        // Add mouse listener for button
-        Toolkit.getDefaultToolkit().addAWTEventListener(e -> {
-            if (e instanceof MouseEvent && ((MouseEvent) e).getID() == MouseEvent.MOUSE_CLICKED) {
-                MouseEvent me = (MouseEvent) e;
-                if (buttonBounds.contains(me.getPoint())) {
-                    AgentMain.setAutomationEnabled(!AgentMain.isAutomationEnabled());
-                }
-            }
-        }, AWTEvent.MOUSE_EVENT_MASK);
+        setPreferredSize(new Dimension(220, 110));
+        // Add overlay menu entry for toggling automation
+        addMenuEntry(MenuAction.RUNELITE_OVERLAY, "Toggle Automation", "OSRS Agent Automation", (menuEntry) -> {
+            AgentMain.setAutomationEnabled(!AgentMain.isAutomationEnabled());
+        });
     }
 
     @Override
     public Dimension render(Graphics2D graphics) {
-        System.out.println("[AutomationOverlay] render() called");
         panel.getChildren().clear();
         panel.getChildren().add(TitleComponent.builder().text("OSRS Agent Automation").build());
         panel.getChildren().add(LineComponent.builder()
             .left("Status:")
             .right(AgentMain.isAutomationEnabled() ? "Enabled" : "Disabled")
             .build());
-        // Draw toggle button
-        String buttonText = AgentMain.isAutomationEnabled() ? "Disable Automation" : "Enable Automation";
-        panel.getChildren().add(LineComponent.builder().left(" ").right(" ").build());
-        panel.getChildren().add(LineComponent.builder().left(buttonText).build());
-        // Draw the panel and get its bounds
-        Dimension dim = panel.render(graphics);
-        // Use a fixed offset for the button position
-        buttonBounds.setLocation(10, 40);
-        graphics.setColor(buttonHovered ? Color.LIGHT_GRAY : Color.GRAY);
+        panel.getChildren().add(LineComponent.builder().left("").build());
+        // Draw the button
+        String buttonText = AgentMain.isAutomationEnabled() ? BUTTON_TEXT_ENABLED : BUTTON_TEXT_DISABLED;
+        int buttonX = 20;
+        int buttonY = 55;
+        buttonBounds.setBounds(buttonX, buttonY, 180, 32);
+        graphics.setColor(new Color(220, 220, 220));
         graphics.fillRect(buttonBounds.x, buttonBounds.y, buttonBounds.width, buttonBounds.height);
         graphics.setColor(Color.BLACK);
         graphics.drawRect(buttonBounds.x, buttonBounds.y, buttonBounds.width, buttonBounds.height);
-        graphics.drawString(buttonText, buttonBounds.x + 10, buttonBounds.y + 16);
-        return dim;
+        FontMetrics fm = graphics.getFontMetrics();
+        int textWidth = fm.stringWidth(buttonText);
+        int textX = buttonBounds.x + (buttonBounds.width - textWidth) / 2;
+        int textY = buttonBounds.y + (buttonBounds.height + fm.getAscent()) / 2 - 4;
+        graphics.drawString(buttonText, textX, textY);
+        // Draw the panel (text above button)
+        panel.setPreferredSize(new Dimension(220, 110));
+        panel.setPreferredLocation(new Point(0, 0));
+        panel.render(graphics);
+        return new Dimension(220, 110);
     }
+
+    @Override
+    public void onMouseOver() {
+        // Optionally highlight the button on hover (not required for menu click)
+    }
+
+    // Optionally, you can override getMenuEntries() if you want to customize menu behavior further.
 }

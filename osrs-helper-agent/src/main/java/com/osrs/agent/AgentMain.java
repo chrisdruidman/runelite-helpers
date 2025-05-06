@@ -87,8 +87,9 @@ public class AgentMain {
                 return;
             }
             // Get OverlayManager instance
-            Object overlayManager = injector.getClass().getMethod("getInstance", Class.class)
-                .invoke(injector, Class.forName("net.runelite.client.ui.overlay.OverlayManager"));
+            java.lang.reflect.Method getInstanceMethod = injector.getClass().getMethod("getInstance", Class.class);
+            getInstanceMethod.setAccessible(true);
+            Object overlayManager = getInstanceMethod.invoke(injector, Class.forName("net.runelite.client.ui.overlay.OverlayManager"));
             System.out.println("[OSRS Helper Agent] OverlayManager: " + overlayManager);
             if (overlayManager == null) {
                 System.out.println("[OSRS Helper Agent] OverlayManager is null, aborting overlay registration.");
@@ -100,7 +101,9 @@ public class AgentMain {
             Object overlay = overlayClass.getConstructor().newInstance();
             System.out.println("[OSRS Helper Agent] Created overlay instance: " + overlay);
             // Inject dependencies if needed
-            injector.getClass().getMethod("injectMembers", Object.class).invoke(injector, overlay);
+            java.lang.reflect.Method injectMembersMethod = injector.getClass().getMethod("injectMembers", Object.class);
+            injectMembersMethod.setAccessible(true);
+            injectMembersMethod.invoke(injector, overlay);
             System.out.println("[OSRS Helper Agent] Dependencies injected into overlay.");
             // Register overlay
             overlayManager.getClass().getMethod("add", Class.forName("net.runelite.client.ui.overlay.Overlay")).invoke(overlayManager, overlay);
