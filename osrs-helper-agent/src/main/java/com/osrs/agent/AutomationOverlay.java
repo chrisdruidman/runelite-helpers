@@ -66,7 +66,8 @@ public class AutomationOverlay extends Overlay implements MouseListener {
     public MouseEvent mouseClicked(MouseEvent event) {
         if (buttonBounds.contains(event.getPoint())) {
             AgentMain.setAutomationEnabled(!AgentMain.isAutomationEnabled());
-            return null; // Consume the event so it does not fall through
+            event.consume();
+            return event; // Never return null
         }
         return event;
     }
@@ -83,7 +84,8 @@ public class AutomationOverlay extends Overlay implements MouseListener {
     @Override
     public MouseEvent mousePressed(MouseEvent event) {
         if (buttonBounds.contains(event.getPoint())) {
-            return null; // Also consume on press for reliability
+            event.consume();
+            return event; // Never return null
         }
         return event;
     }

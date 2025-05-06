@@ -45,10 +45,8 @@ public class AgentMain {
                 System.out.println("[OSRS Helper Agent] Already loaded: " + clazz.getName());
             }
         }
-        // Install generic reusable hook with detailed ByteBuddy logging
+        // Install generic reusable hook without ByteBuddy debug logging
         new AgentBuilder.Default()
-            .with(AgentBuilder.Listener.StreamWriting.toSystemOut())
-            .with(AgentBuilder.InstallationListener.StreamWriting.toSystemOut())
             .type(ElementMatchers.nameContainsIgnoreCase("runelite"))
             .transform(new GenericHook(ElementMatchers.any()))
             .type(ElementMatchers.named("net.runelite.client.input.MouseManager"))
@@ -111,7 +109,9 @@ public class AgentMain {
             // Register overlay as a mouse listener with MouseManager
             Object mouseManager = getInstanceMethod.invoke(injector, Class.forName("net.runelite.client.input.MouseManager"));
             if (mouseManager != null) {
-                mouseManager.getClass().getMethod("registerMouseListener", Class.forName("net.runelite.client.input.MouseListener")).invoke(mouseManager, overlay);
+                java.lang.reflect.Method registerMouseListenerMethod = mouseManager.getClass().getMethod("registerMouseListener", Class.forName("net.runelite.client.input.MouseListener"));
+                registerMouseListenerMethod.setAccessible(true);
+                registerMouseListenerMethod.invoke(mouseManager, overlay);
                 System.out.println("[OSRS Helper Agent] AutomationOverlay registered as MouseListener.");
             } else {
                 System.out.println("[OSRS Helper Agent] MouseManager is null, could not register overlay as MouseListener.");
@@ -187,6 +187,7 @@ public class AgentMain {
     public static class MouseAutomationAdvice {
         public static volatile Integer targetX = null;
         public static volatile Integer targetY = null;
+        public static final ThreadLocal<Boolean> isInjecting = ThreadLocal.withInitial(() -> false);
 
         public static void setTarget(int x, int y) {
             targetX = x;
@@ -196,7 +197,9 @@ public class AgentMain {
         @Advice.OnMethodEnter(skipOn = Advice.OnNonDefaultValue.class)
         static boolean onEnter(@Advice.This(optional = true) Object self, @Advice.Origin String method, @Advice.AllArguments Object[] args) {
             if (!AgentMain.isAutomationEnabled()) return false;
+            if (isInjecting.get()) return false; // Prevent recursion
             try {
+                isInjecting.set(true);
                 Class<?> mouseEventClass = Class.forName("java.awt.event.MouseEvent");
                 java.awt.Component component = null;
                 if (args.length > 0 && args[0] instanceof java.awt.event.MouseEvent) {
@@ -266,6 +269,8 @@ public class AgentMain {
                 System.out.println("[MouseAutomation] Injected synthetic MouseEvent path and click at " + end);
             } catch (Exception e) {
                 e.printStackTrace();
+            } finally {
+                isInjecting.set(false);
             }
             return false;
         }
@@ -275,7 +280,7 @@ public class AgentMain {
      * Advice for per-tick automation logic.
      */
     public static class GameTickAutomationAdvice {
-        private static volatile boolean overlayRegistered = false;
+        public static volatile boolean overlayRegistered = false;
 
         @Advice.OnMethodEnter
         static void onEnter() {

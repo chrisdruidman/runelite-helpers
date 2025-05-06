@@ -71,6 +71,8 @@ public class RuneLiteCustomLauncher {
         jvmArgs.add("-javaagent:" + AGENT_JAR);
         // Add --add-opens for Guice reflection access (Java 9+)
         jvmArgs.add("--add-opens=ALL-UNNAMED/com.google.inject.internal=ALL-UNNAMED");
+        jvmArgs.add("--add-opens=ALL-UNNAMED/com.google.inject=ALL-UNNAMED");
+        jvmArgs.add("--add-opens=ALL-UNNAMED/com.google.inject.spi=ALL-UNNAMED");
         jvmArgs.add("--add-opens=java.base/java.lang=ALL-UNNAMED");
         jvmArgs.add("--add-opens=java.base/java.lang.reflect=ALL-UNNAMED");
         jvmArgs.add("--add-opens=java.base/java.util=ALL-UNNAMED");
