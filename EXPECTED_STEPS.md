@@ -2,7 +2,7 @@
 
 ## 1. Set Up Your Java Agent Project
 
--   Create a new Java project in the `osrs-helper-agent` folder (separate from `runelite`).
+-   Create a new Java project in the current directory (separate from `runelite`).
 -   Add a bytecode manipulation library dependency (e.g., ByteBuddy or ASM) to your project.
 
 ## 2. Analyze the RuneLite Source Code
