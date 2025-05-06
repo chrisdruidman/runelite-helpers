@@ -10,7 +10,7 @@ import java.lang.instrument.Instrumentation;
 
 public class AgentMain {
     // Toggle for enabling/disabling automation
-    private static volatile boolean automationEnabled = true;
+    private static volatile boolean automationEnabled = false;
 
     public static void setAutomationEnabled(boolean enabled) {
         automationEnabled = enabled;
