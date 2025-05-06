@@ -21,17 +21,17 @@
         <dependency>
             <groupId>net.runelite</groupId>
             <artifactId>runelite-api</artifactId>
-            <version>1.10.20</version>
+            <version>1.11.8</version>
             <scope>system</scope>
-            <systemPath>${project.basedir}/../runelite-api/target/runelite-api-1.10.20.jar</systemPath>
+            <systemPath>${project.basedir}/../runelite/runelite-api/target/runelite-api-1.11.8-SNAPSHOT.jar</systemPath>
         </dependency>
         <!-- RuneLite Client dependency -->
         <dependency>
             <groupId>net.runelite</groupId>
             <artifactId>runelite-client</artifactId>
-            <version>1.10.20</version>
+            <version>1.11.8</version>
             <scope>system</scope>
-            <systemPath>${project.basedir}/../runelite-client/target/runelite-client-1.10.20.jar</systemPath>
+            <systemPath>${project.basedir}/../runelite/runelite-client/target/client-1.11.8-SNAPSHOT.jar</systemPath>
         </dependency>
     </dependencies>
     <build>
