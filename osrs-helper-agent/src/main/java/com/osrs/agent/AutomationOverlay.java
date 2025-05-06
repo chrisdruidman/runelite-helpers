@@ -9,11 +9,11 @@ import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.components.PanelComponent;
 import net.runelite.client.ui.overlay.components.TitleComponent;
 import net.runelite.client.ui.overlay.components.LineComponent;
-import net.runelite.client.ui.overlay.OverlayMouseListener;
+import net.runelite.client.input.MouseListener;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 
-public class AutomationOverlay extends Overlay implements OverlayMouseListener {
+public class AutomationOverlay extends Overlay implements MouseListener {
     private final PanelComponent panel = new PanelComponent();
     private Rectangle buttonBounds = new Rectangle(0, 0, 180, 32);
     private static final String BUTTON_TEXT_ENABLED = "Disable Automation";
@@ -61,30 +61,33 @@ public class AutomationOverlay extends Overlay implements OverlayMouseListener {
     }
 
     @Override
-    public void onMouseOver() {
-        // Optionally highlight the button on hover (not required for menu click)
-    }
-
-    @Override
-    public boolean mouseClicked(MouseEvent event) {
+    public MouseEvent mouseClicked(MouseEvent event) {
         if (buttonBounds.contains(event.getPoint())) {
             AgentMain.setAutomationEnabled(!AgentMain.isAutomationEnabled());
-            event.consume(); // Prevents click from passing through
-            return true;
+            return null; // Consume the event so it does not fall through
         }
-        return false;
+        return event;
     }
 
     @Override
-    public boolean mouseMoved(MouseEvent event) {
+    public MouseEvent mouseMoved(MouseEvent event) {
         boolean wasHovered = buttonHovered;
         buttonHovered = buttonBounds.contains(event.getPoint());
-        if (buttonHovered != wasHovered) {
-            // Request overlay redraw
-            return true;
-        }
-        return false;
+        // If hover state changed, request overlay redraw (RuneLite will handle this)
+        return event;
     }
 
-    // Optionally, you can also override mousePressed/mouseReleased if needed
+    // Implement other MouseListener methods as no-ops
+    @Override
+    public MouseEvent mousePressed(MouseEvent event) {
+        if (buttonBounds.contains(event.getPoint())) {
+            return null; // Also consume on press for reliability
+        }
+        return event;
+    }
+
+    @Override public MouseEvent mouseReleased(MouseEvent event) { return event; }
+    @Override public MouseEvent mouseEntered(MouseEvent event) { return event; }
+    @Override public MouseEvent mouseExited(MouseEvent event) { return event; }
+    @Override public MouseEvent mouseDragged(MouseEvent event) { return event; }
 }
