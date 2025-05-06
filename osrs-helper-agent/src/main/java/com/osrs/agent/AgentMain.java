@@ -9,6 +9,18 @@ import net.bytebuddy.matcher.ElementMatchers;
 import java.lang.instrument.Instrumentation;
 
 public class AgentMain {
+    // Toggle for enabling/disabling automation
+    private static volatile boolean automationEnabled = true;
+
+    public static void setAutomationEnabled(boolean enabled) {
+        automationEnabled = enabled;
+        System.out.println("[OSRS Helper Agent] Automation " + (enabled ? "enabled" : "disabled"));
+    }
+
+    public static boolean isAutomationEnabled() {
+        return automationEnabled;
+    }
+
     public static void premain(String agentArgs, Instrumentation inst) {
         System.out.println("[OSRS Helper Agent] Agent started. Initializing ByteBuddy...");
         // Install generic reusable hook
@@ -93,6 +105,7 @@ public class AgentMain {
 
         @Advice.OnMethodEnter(skipOn = Advice.OnNonDefaultValue.class)
         static boolean onEnter(@Advice.This(optional = true) Object self, @Advice.Origin String method, @Advice.AllArguments Object[] args) {
+            if (!AgentMain.isAutomationEnabled()) return false;
             try {
                 Class<?> mouseEventClass = Class.forName("java.awt.event.MouseEvent");
                 java.awt.Component component = null;
@@ -174,6 +187,7 @@ public class AgentMain {
     public static class GameTickAutomationAdvice {
         @Advice.OnMethodEnter
         static void onEnter() {
+            if (!AgentMain.isAutomationEnabled()) return;
             try {
                 // Use reflection to get the RuneLite client instance
                 Class<?> clientClass = Class.forName("net.runelite.client.RuneLite");
