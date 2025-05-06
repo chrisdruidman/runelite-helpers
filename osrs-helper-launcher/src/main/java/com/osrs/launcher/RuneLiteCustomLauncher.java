@@ -15,7 +15,6 @@ import org.json.JSONObject;
 
 public class RuneLiteCustomLauncher {
     private static final String BOOTSTRAP_URL = "https://static.runelite.net/bootstrap.json";
-    private static final String CLIENT_JAR_NAME = "runelite-client-latest.jar";
     private static final String AGENT_JAR = ".." + File.separator + "osrs-helper-agent" + File.separator + "target" + File.separator + "osrs-helper-agent-1.0-SNAPSHOT-shaded.jar";
 
     public static void main(String[] args) throws Exception {
@@ -23,17 +22,35 @@ public class RuneLiteCustomLauncher {
         System.out.println("[Launcher] Downloading bootstrap.json...");
         String bootstrapJson = readUrl(BOOTSTRAP_URL);
         JSONObject json = new JSONObject(bootstrapJson);
-        JSONObject clientObj = json.getJSONObject("client");
-        String clientUrl = clientObj.getString("jar");
-        String clientHash = clientObj.getString("sha256");
-        // Get the launcher version from bootstrap.json
-        String launcherVersion = json.getJSONObject("launcher").getString("version");
+        // Get the first artifact for the latest client
+        JSONObject clientArtifact = json.getJSONArray("artifacts").getJSONObject(0);
+        String clientUrl = clientArtifact.getString("path");
+        String clientHash = clientArtifact.getString("hash");
+        String clientJarName = clientArtifact.getString("name");
+        // Get client JVM arguments
+        List<String> jvmArgs = new ArrayList<>();
+        if (json.has("clientJvmArguments")) {
+            for (Object arg : json.getJSONArray("clientJvmArguments")) {
+                jvmArgs.add(arg.toString());
+            }
+        }
+        // Get the launcher version (fallback to hardcoded if not present)
+        String launcherVersion = "2.7.4";
+        if (json.has("launcher")) {
+            launcherVersion = json.getJSONObject("launcher").optString("version", launcherVersion);
+        } else if (json.has("version")) {
+            // Only use top-level version if it looks like a launcher version (e.g., contains a dot and is not client version)
+            String v = json.getString("version");
+            if (v.matches("\\d+\\.\\d+\\.\\d+")) {
+                launcherVersion = v;
+            }
+        }
         System.out.println("[Launcher] Latest client jar: " + clientUrl);
         System.out.println("[Launcher] Expected SHA-256: " + clientHash);
         System.out.println("[Launcher] Launcher version: " + launcherVersion);
 
         // Download client jar if needed
-        File clientJar = new File(CLIENT_JAR_NAME);
+        File clientJar = new File(clientJarName);
         boolean needsDownload = true;
         if (clientJar.exists()) {
             String localHash = sha256(clientJar.getAbsolutePath());
@@ -46,7 +63,7 @@ public class RuneLiteCustomLauncher {
             }
         }
         if (needsDownload) {
-            downloadFile(clientUrl, CLIENT_JAR_NAME);
+            downloadFile(clientUrl, clientJarName);
             String downloadedHash = sha256(clientJar.getAbsolutePath());
             if (!downloadedHash.equalsIgnoreCase(clientHash)) {
                 throw new RuntimeException("Downloaded client jar hash does not match expected SHA-256!");
@@ -54,16 +71,8 @@ public class RuneLiteCustomLauncher {
             System.out.println("[Launcher] Downloaded and verified client jar.");
         }
 
-        // JVM arguments from the log
-        List<String> jvmArgs = new ArrayList<>();
-        jvmArgs.add("-XX:+DisableAttachMechanism");
-        jvmArgs.add("-Xmx768m");
-        jvmArgs.add("-Xss2m");
-        jvmArgs.add("-XX:CompileThreshold=1500");
-        jvmArgs.add("-Dsun.java2d.d3d=true");
-        jvmArgs.add("-Dsun.java2d.opengl=false");
+        // Add agent and launcher version JVM args
         jvmArgs.add("-Drunelite.launcher.version=" + launcherVersion);
-        jvmArgs.add("-XX:ErrorFile=" + System.getenv("USERPROFILE") + "\\.runelite\\logs\\jvm_crash_pid_%p.log");
         jvmArgs.add("-javaagent:" + AGENT_JAR);
 
         // Build the command
@@ -71,7 +80,7 @@ public class RuneLiteCustomLauncher {
         command.add(javaBin());
         command.addAll(jvmArgs);
         command.add("-jar");
-        command.add(CLIENT_JAR_NAME);
+        command.add(clientJarName);
         for (String arg : args) {
             command.add(arg);
         }
