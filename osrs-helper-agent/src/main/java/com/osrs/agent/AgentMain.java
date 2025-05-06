@@ -88,12 +88,13 @@ public class AgentMain {
             // Replace these with actual start/end points from the context if available
             java.awt.Point start = new java.awt.Point(100, 100); // TODO: get real current mouse position
             java.awt.Point end = new java.awt.Point(200, 200);   // TODO: get real target position
-            java.util.List<java.awt.Point> path = com.osrs.agent.HumanMousePath.generate(start, end, 20);
+            // Use advanced Bezier path for more human-like movement
+            java.util.List<java.awt.Point> path = com.osrs.agent.HumanMousePath.generateBezier(start, end, 20);
             for (java.awt.Point p : path) {
                 // TODO: Move mouse to p (requires native or client API)
                 try { Thread.sleep(5 + (int)(Math.random() * 10)); } catch (InterruptedException ignored) {}
             }
-            System.out.println("[MouseAutomation] Simulated human-like mouse path from " + start + " to " + end);
+            System.out.println("[MouseAutomation] Simulated advanced Bezier mouse path from " + start + " to " + end);
             return false; // return true to skip, false to continue
         }
     }
