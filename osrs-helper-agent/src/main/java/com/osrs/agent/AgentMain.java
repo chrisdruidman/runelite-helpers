@@ -185,8 +185,8 @@ public class AgentMain {
      * Extend this to inject custom mouse movement/automation logic.
      */
     public static class MouseAutomationAdvice {
-        private static volatile Integer targetX = null;
-        private static volatile Integer targetY = null;
+        public static volatile Integer targetX = null;
+        public static volatile Integer targetY = null;
 
         public static void setTarget(int x, int y) {
             targetX = x;
