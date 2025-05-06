@@ -17,6 +17,8 @@ public class AgentMain {
             .transform(new GenericHook(ElementMatchers.any()))
             .type(ElementMatchers.named("net.runelite.client.input.MouseManager"))
             .transform(new MouseAutomationHook())
+            .type(ElementMatchers.named("net.runelite.client.callback.Hooks"))
+            .transform(new GameTickHook())
             .installOn(inst);
     }
 
@@ -119,6 +121,32 @@ public class AgentMain {
                 e.printStackTrace();
             }
             return false;
+        }
+    }
+
+    /**
+     * Advice for per-tick automation logic.
+     */
+    public static class GameTickAutomationAdvice {
+        @Advice.OnMethodEnter
+        static void onEnter() {
+            // TODO: Insert agility automation logic here
+            // Example: Check player state, find next obstacle, trigger mouse automation
+            System.out.println("[AgilityAutomation] Game tick - ready for automation logic");
+        }
+    }
+
+    /**
+     * Transformer for game tick hooks.
+     */
+    public static class GameTickHook implements AgentBuilder.Transformer {
+        @Override
+        public net.bytebuddy.dynamic.DynamicType.Builder<?> transform(
+                net.bytebuddy.dynamic.DynamicType.Builder<?> builder,
+                net.bytebuddy.description.type.TypeDescription typeDescription,
+                ClassLoader classLoader,
+                java.lang.module.Module module) {
+            return builder.visit(Advice.to(GameTickAutomationAdvice.class).on(ElementMatchers.named("tick")));
         }
     }
 }
