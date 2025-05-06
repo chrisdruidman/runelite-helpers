@@ -9,13 +9,16 @@ import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.components.PanelComponent;
 import net.runelite.client.ui.overlay.components.TitleComponent;
 import net.runelite.client.ui.overlay.components.LineComponent;
+import net.runelite.client.ui.overlay.OverlayMouseListener;
 import java.awt.*;
+import java.awt.event.MouseEvent;
 
-public class AutomationOverlay extends Overlay {
+public class AutomationOverlay extends Overlay implements OverlayMouseListener {
     private final PanelComponent panel = new PanelComponent();
     private Rectangle buttonBounds = new Rectangle(0, 0, 180, 32);
     private static final String BUTTON_TEXT_ENABLED = "Disable Automation";
     private static final String BUTTON_TEXT_DISABLED = "Enable Automation";
+    private boolean buttonHovered = false;
 
     public AutomationOverlay() {
         setPosition(OverlayPosition.TOP_LEFT);
@@ -41,7 +44,7 @@ public class AutomationOverlay extends Overlay {
         int buttonX = 20;
         int buttonY = 55;
         buttonBounds.setBounds(buttonX, buttonY, 180, 32);
-        graphics.setColor(new Color(220, 220, 220));
+        graphics.setColor(buttonHovered ? new Color(180, 200, 255) : new Color(220, 220, 220));
         graphics.fillRect(buttonBounds.x, buttonBounds.y, buttonBounds.width, buttonBounds.height);
         graphics.setColor(Color.BLACK);
         graphics.drawRect(buttonBounds.x, buttonBounds.y, buttonBounds.width, buttonBounds.height);
@@ -62,5 +65,26 @@ public class AutomationOverlay extends Overlay {
         // Optionally highlight the button on hover (not required for menu click)
     }
 
-    // Optionally, you can override getMenuEntries() if you want to customize menu behavior further.
+    @Override
+    public boolean mouseClicked(MouseEvent event) {
+        if (buttonBounds.contains(event.getPoint())) {
+            AgentMain.setAutomationEnabled(!AgentMain.isAutomationEnabled());
+            event.consume(); // Prevents click from passing through
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean mouseMoved(MouseEvent event) {
+        boolean wasHovered = buttonHovered;
+        buttonHovered = buttonBounds.contains(event.getPoint());
+        if (buttonHovered != wasHovered) {
+            // Request overlay redraw
+            return true;
+        }
+        return false;
+    }
+
+    // Optionally, you can also override mousePressed/mouseReleased if needed
 }
