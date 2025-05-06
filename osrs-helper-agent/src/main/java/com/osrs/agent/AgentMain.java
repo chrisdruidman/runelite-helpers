@@ -23,8 +23,10 @@ public class AgentMain {
 
     public static void premain(String agentArgs, Instrumentation inst) {
         System.out.println("[OSRS Helper Agent] Agent started. Initializing ByteBuddy...");
-        // Install generic reusable hook
+        // Install generic reusable hook with detailed ByteBuddy logging
         new AgentBuilder.Default()
+            .with(AgentBuilder.Listener.StreamWriting.toSystemOut())
+            .with(AgentBuilder.InstallationListener.StreamWriting.toSystemOut())
             .type(ElementMatchers.nameContainsIgnoreCase("runelite"))
             .transform(new GenericHook(ElementMatchers.any()))
             .type(ElementMatchers.named("net.runelite.client.input.MouseManager"))
