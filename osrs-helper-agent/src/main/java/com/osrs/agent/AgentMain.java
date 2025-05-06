@@ -24,10 +24,22 @@ public class AgentMain {
 
     public static void premain(String agentArgs, Instrumentation inst) {
         System.out.println("[OSRS Helper Agent] Agent started. Initializing ByteBuddy...");
+        // Print process ID and JVM arguments
+        String pid = java.lang.management.ManagementFactory.getRuntimeMXBean().getName();
+        System.out.println("[OSRS Helper Agent] Process ID: " + pid);
+        System.out.println("[OSRS Helper Agent] JVM Args: " + java.lang.management.ManagementFactory.getRuntimeMXBean().getInputArguments());
+        // Print retransformation support
+        System.out.println("[OSRS Helper Agent] isRetransformClassesSupported: " + inst.isRetransformClassesSupported());
+        // Print total loaded classes and a sample
+        Class<?>[] loaded = inst.getAllLoadedClasses();
+        System.out.println("[OSRS Helper Agent] Loaded class count: " + loaded.length);
+        for (int i = 0; i < Math.min(20, loaded.length); i++) {
+            System.out.println("[OSRS Helper Agent] Loaded: " + loaded[i].getName());
+        }
         // Log all loaded classes containing 'runelite' to check class loading order
-        for (Class<?> loaded : inst.getAllLoadedClasses()) {
-            if (loaded.getName().toLowerCase().contains("runelite")) {
-                System.out.println("[OSRS Helper Agent] Already loaded: " + loaded.getName());
+        for (Class<?> clazz : loaded) {
+            if (clazz.getName().toLowerCase().contains("runelite")) {
+                System.out.println("[OSRS Helper Agent] Already loaded: " + clazz.getName());
             }
         }
         // Install generic reusable hook with detailed ByteBuddy logging and retransformation
