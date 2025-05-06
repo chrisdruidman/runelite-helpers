@@ -83,9 +83,17 @@ public class AgentMain {
     public static class MouseAutomationAdvice {
         @Advice.OnMethodEnter(skipOn = Advice.OnNonDefaultValue.class)
         static boolean onEnter(@Advice.Origin String method, @Advice.AllArguments Object[] args) {
-            // TODO: Insert logic to simulate human-like mouse movement here.
-            // For example, randomize movement path, add delays, or use splines.
-            // Return true to skip original method if you fully handle the event.
+            // Example: Simulate human-like mouse movement
+            // Usage of HumanMousePath utility
+            // Replace these with actual start/end points from the context if available
+            java.awt.Point start = new java.awt.Point(100, 100); // TODO: get real current mouse position
+            java.awt.Point end = new java.awt.Point(200, 200);   // TODO: get real target position
+            java.util.List<java.awt.Point> path = com.osrs.agent.HumanMousePath.generate(start, end, 20);
+            for (java.awt.Point p : path) {
+                // TODO: Move mouse to p (requires native or client API)
+                try { Thread.sleep(5 + (int)(Math.random() * 10)); } catch (InterruptedException ignored) {}
+            }
+            System.out.println("[MouseAutomation] Simulated human-like mouse path from " + start + " to " + end);
             return false; // return true to skip, false to continue
         }
     }
