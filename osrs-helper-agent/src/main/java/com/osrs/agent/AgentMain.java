@@ -277,12 +277,12 @@ public class AgentMain {
                                     if (Math.abs(playerX - objX) < 3 && Math.abs(playerY - objY) < 3) {
                                         System.out.println("[AgilityAutomation] Mark of Grace detected at " + objX + "," + objY);
                                         Object localPoint = obj.getClass().getMethod("getLocalLocation").invoke(obj);
-                                        int plane = (int) client.getClass().getMethod("getPlane").invoke(client);
+                                        int planeObstacle = (int) client.getClass().getMethod("getPlane").invoke(client);
                                         Class<?> perspectiveClass = Class.forName("net.runelite.api.Perspective");
                                         java.awt.Point canvasPoint = (java.awt.Point) perspectiveClass.getMethod(
                                             "localToCanvas", Class.forName("net.runelite.api.Client"),
                                             Class.forName("net.runelite.api.coords.LocalPoint"), int.class)
-                                            .invoke(null, client, localPoint, plane);
+                                            .invoke(null, client, localPoint, planeObstacle);
                                         if (canvasPoint != null) {
                                             int screenX = canvasPoint.x;
                                             int screenY = canvasPoint.y;

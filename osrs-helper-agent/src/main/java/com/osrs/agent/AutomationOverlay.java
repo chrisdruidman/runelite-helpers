@@ -7,7 +7,6 @@ import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.components.PanelComponent;
 import net.runelite.client.ui.overlay.components.TitleComponent;
 import net.runelite.client.ui.overlay.components.LineComponent;
-import javax.inject.Inject;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -16,9 +15,6 @@ public class AutomationOverlay extends Overlay {
     private final PanelComponent panel = new PanelComponent();
     private boolean buttonHovered = false;
     private Rectangle buttonBounds = new Rectangle(0, 0, 120, 24);
-
-    @Inject
-    private Client client;
 
     public AutomationOverlay() {
         setPosition(OverlayPosition.TOP_LEFT);
@@ -48,7 +44,8 @@ public class AutomationOverlay extends Overlay {
         panel.getChildren().add(LineComponent.builder().left(buttonText).build());
         // Draw the panel and get its bounds
         Dimension dim = panel.render(graphics);
-        buttonBounds.setLocation(panel.getPreferredLocation().x + 5, panel.getPreferredLocation().y + 40);
+        // Use a fixed offset for the button position
+        buttonBounds.setLocation(10, 40);
         graphics.setColor(buttonHovered ? Color.LIGHT_GRAY : Color.GRAY);
         graphics.fillRect(buttonBounds.x, buttonBounds.y, buttonBounds.width, buttonBounds.height);
         graphics.setColor(Color.BLACK);
