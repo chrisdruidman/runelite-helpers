@@ -82,20 +82,43 @@ public class AgentMain {
      */
     public static class MouseAutomationAdvice {
         @Advice.OnMethodEnter(skipOn = Advice.OnNonDefaultValue.class)
-        static boolean onEnter(@Advice.Origin String method, @Advice.AllArguments Object[] args) {
-            // Example: Simulate human-like mouse movement
-            // Usage of HumanMousePath utility
-            // Replace these with actual start/end points from the context if available
-            java.awt.Point start = new java.awt.Point(100, 100); // TODO: get real current mouse position
-            java.awt.Point end = new java.awt.Point(200, 200);   // TODO: get real target position
-            // Use advanced Bezier path for more human-like movement
-            java.util.List<java.awt.Point> path = com.osrs.agent.HumanMousePath.generateBezier(start, end, 20);
-            for (java.awt.Point p : path) {
-                // TODO: Move mouse to p (requires native or client API)
-                try { Thread.sleep(5 + (int)(Math.random() * 10)); } catch (InterruptedException ignored) {}
+        static boolean onEnter(@Advice.This(optional = true) Object self, @Advice.Origin String method, @Advice.AllArguments Object[] args) {
+            // Example: Simulate human-like mouse movement by injecting synthetic MouseEvent objects
+            try {
+                Class<?> mouseEventClass = Class.forName("java.awt.event.MouseEvent");
+                java.awt.Component component = null;
+                if (args.length > 0 && args[0] instanceof java.awt.event.MouseEvent) {
+                    component = ((java.awt.event.MouseEvent) args[0]).getComponent();
+                }
+                if (component == null) return false;
+                java.awt.Point start = new java.awt.Point(100, 100); // TODO: get real current mouse position
+                // Add randomisation to the end point target for more authentic movement
+                java.util.Random rand = new java.util.Random();
+                int endJitterX = rand.nextInt(8) - 4; // -4 to +3 px
+                int endJitterY = rand.nextInt(8) - 4;
+                java.awt.Point end = new java.awt.Point(200 + endJitterX, 200 + endJitterY); // TODO: get real target position
+                java.util.List<java.awt.Point> path = com.osrs.agent.HumanMousePath.generateBezier(start, end, 20);
+                for (java.awt.Point p : path) {
+                    java.awt.event.MouseEvent synthetic = new java.awt.event.MouseEvent(
+                        component,
+                        java.awt.event.MouseEvent.MOUSE_MOVED,
+                        System.currentTimeMillis(),
+                        0,
+                        p.x,
+                        p.y,
+                        0,
+                        false
+                    );
+                    // Call processMouseMoved on MouseManager
+                    self.getClass().getMethod("processMouseMoved", java.awt.event.MouseEvent.class)
+                        .invoke(self, synthetic);
+                    Thread.sleep(5 + (int)(Math.random() * 10));
+                }
+                System.out.println("[MouseAutomation] Injected synthetic MouseEvent path from " + start + " to " + end);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-            System.out.println("[MouseAutomation] Simulated advanced Bezier mouse path from " + start + " to " + end);
-            return false; // return true to skip, false to continue
+            return false;
         }
     }
 }
