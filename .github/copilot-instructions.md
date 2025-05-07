@@ -12,6 +12,6 @@ We will be using Maven to build our projects, as this is the same tool used to b
 
 The git repository for this project is in the top level folder. Please ensure that Maven output files, the 'runelite' folder and our log files are added to the .gitignore file. You will commit each change to the git repository with a comment summarising the changes.
 
-You will ask me about the current step that we are working on. When I say a step has been completed, you will output a summary into a markdown file inside of the 'steps-taken' folder. At the top of this file you will add 'COMPLETED - <current timestamp>', making sure to replace <current timestamp> with the current date and time. Doing this will allow you to work over multiple chats, which will help keep your context small and focused.
+You will ask me about the current step that we are working on. When I say a step has been completed, you will output a summary into a markdown file inside of the 'steps-taken' folder. At the top of this file you will add 'COMPLETED - <current timestamp>', making sure to replace <current timestamp> with the current date and time, using 'YYYY-MM-DD HH:mm' format. Doing this will allow you to work over multiple chats, which will help keep your context small and focused.
 
 At the start of any chat, please check the 'steps-taken' folder so you get up to speed with where we are currently at in our project. This folder will be empty at the start of our work, so please don't freak out about it.
