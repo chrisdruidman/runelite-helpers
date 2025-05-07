@@ -68,6 +68,64 @@ public class AgilityModule implements HelperModule, OverlayController.CourseSele
                     if (actionableId != -1) {
                         try {
                             mouseInputService.clickGameObject(actionableId);
+                            // Wait for player animation to change or become idle
+                            net.runelite.api.Client client = serviceRegistry.get(net.runelite.api.Client.class);
+                            if (client != null && client.getLocalPlayer() != null) {
+                                int initialAnimation = client.getLocalPlayer().getAnimation();
+                                long start = System.currentTimeMillis();
+                                while (running.get()) {
+                                    int currentAnimation = client.getLocalPlayer().getAnimation();
+                                    // Check if next actionable obstacle is visible
+                                    int nextActionableId = finalCourse.getActionableObstacleId();
+                                    boolean nextObstacleVisible = false;
+                                    if (nextActionableId != -1) {
+                                        // Try to find the TileObject for the next obstacle
+                                        net.runelite.api.Scene scene = client.getScene();
+                                        if (scene != null) {
+                                            net.runelite.api.Tile[][][] tiles = scene.getTiles();
+                                            outer: for (int z = 0; z < tiles.length; z++) {
+                                                for (int x = 0; x < tiles[z].length; x++) {
+                                                    for (int y = 0; y < tiles[z][x].length; y++) {
+                                                        net.runelite.api.Tile tile = tiles[z][x][y];
+                                                        if (tile == null) continue;
+                                                        net.runelite.api.GameObject[] gameObjects = tile.getGameObjects();
+                                                        if (gameObjects != null) {
+                                                            for (net.runelite.api.GameObject obj : gameObjects) {
+                                                                if (obj != null && obj.getId() == nextActionableId && obj.getClickbox() != null) {
+                                                                    nextObstacleVisible = true;
+                                                                    break outer;
+                                                                }
+                                                            }
+                                                        }
+                                                        net.runelite.api.WallObject wall = tile.getWallObject();
+                                                        if (wall != null && wall.getId() == nextActionableId && wall.getClickbox() != null) {
+                                                            nextObstacleVisible = true;
+                                                            break outer;
+                                                        }
+                                                        net.runelite.api.DecorativeObject deco = tile.getDecorativeObject();
+                                                        if (deco != null && deco.getId() == nextActionableId && deco.getClickbox() != null) {
+                                                            nextObstacleVisible = true;
+                                                            break outer;
+                                                        }
+                                                        net.runelite.api.GroundObject ground = tile.getGroundObject();
+                                                        if (ground != null && ground.getId() == nextActionableId && ground.getClickbox() != null) {
+                                                            nextObstacleVisible = true;
+                                                            break outer;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if ((currentAnimation == -1 || currentAnimation != initialAnimation) && nextObstacleVisible) {
+                                        break; // Obstacle cleared and next is visible
+                                    }
+                                    if (System.currentTimeMillis() - start > 8000) { // Timeout after 8s
+                                        break;
+                                    }
+                                    try { Thread.sleep(100); } catch (InterruptedException ignored) {}
+                                }
+                            }
                         } catch (Exception e) {
                             System.err.println("[AgilityModule] Exception in clickGameObject: " + e);
                             e.printStackTrace();
@@ -148,5 +206,9 @@ public class AgilityModule implements HelperModule, OverlayController.CourseSele
         if (course != null) {
             course.resetCourse();
         }
+    }
+
+    public void stop() {
+        running.set(false);
     }
 }

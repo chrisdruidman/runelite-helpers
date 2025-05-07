@@ -53,7 +53,14 @@ public class OverlayController {
                     Agent.runModule(name);
                 } else {
                     logger.info("Disabling module: " + name);
-                    // Future: add stop logic if needed
+                    HelperModule module = modules.get(name);
+                    if (module != null) {
+                        try {
+                            module.getClass().getMethod("stop").invoke(module);
+                        } catch (Exception ex) {
+                            logger.warning("Failed to stop module '" + name + "': " + ex.getMessage());
+                        }
+                    }
                 }
             });
             panel.add(new JLabel(name));
