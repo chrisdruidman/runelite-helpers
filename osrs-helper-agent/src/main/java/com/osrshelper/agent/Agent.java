@@ -87,8 +87,13 @@ public class Agent {
             serviceRegistry.register(MouseInputService.class, mouseInputService);
             // Register modules, passing services as needed
             registerModule(new AgilityModule(gameStateProvider, mouseInputService));
-            // Example: run the Agility module
-            runModule("agility");
+            // Launch overlay for toggling modules
+            OverlayController overlay = new OverlayController(modules);
+            overlay.show();
+            // Example: run the Agility module if enabled
+            if (overlay.isModuleEnabled("agility")) {
+                runModule("agility");
+            }
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Agent initialization failed", e);
         }
