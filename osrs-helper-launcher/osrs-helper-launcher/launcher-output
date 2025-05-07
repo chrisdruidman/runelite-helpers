@@ -1,0 +1,108 @@
+May 07, 2025 5:13:47 PM com.osrshelper.launcher.Main main
+INFO: OSRS Helper Launcher started.
+May 07, 2025 5:13:47 PM com.osrshelper.launcher.Main getBootstrapJson
+INFO: Using cached bootstrap.json (age: 26 min)
+May 07, 2025 5:13:47 PM com.osrshelper.launcher.Main main
+INFO: Using bootstrap.json at: C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\bootstrap.json
+May 07, 2025 5:13:47 PM com.osrshelper.launcher.Main main
+INFO: RuneLite version: 1.11.7
+May 07, 2025 5:13:47 PM com.osrshelper.launcher.Main main
+INFO: Latest client jar: client-1.11.7.jar (https://repo.runelite.net/net/runelite/client/1.11.7/client-1.11.7.jar)
+May 07, 2025 5:13:47 PM com.osrshelper.launcher.Main main
+INFO: Client JVM args: [-XX:+DisableAttachMechanism, -Xmx768m, -Xss2m, -XX:CompileThreshold=1500, -Xincgc, -XX:+UseConcMarkSweepGC, -XX:+UseParNewGC]
+May 07, 2025 5:13:47 PM com.osrshelper.launcher.Main main
+INFO: Launcher JVM args: [-XX:+DisableAttachMechanism, -Drunelite.launcher.nojvm=true, -Xmx768m, -Xss2m, -XX:CompileThreshold=1500, -Xincgc, -XX:+UseConcMarkSweepGC, -XX:+UseParNewGC]
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: client-1.11.7.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: slf4j-api-1.7.25.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: logback-classic-1.2.9.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: logback-core-1.2.9.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: jopt-simple-5.0.1.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: guava-23.2-jre.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: guice-4.1.0-no_aop.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: javax.inject-1.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: aopalliance-1.0.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: gson-2.8.5.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: flatlaf-3.2.5-rl4.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: commons-text-1.2.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: commons-lang3-3.7.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: jna-5.9.0.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: jna-platform-5.9.0.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: jsr305-3.0.2.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: protobuf-javalite-3.21.12.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: rlawt-1.5.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: lwjgl-3.3.2.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: lwjgl-3.3.2-natives-linux.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: lwjgl-3.3.2-natives-macos.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: lwjgl-3.3.2-natives-macos-arm64.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: lwjgl-3.3.2-natives-windows-x86.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: lwjgl-3.3.2-natives-windows.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: lwjgl-3.3.2-natives-windows-arm64.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: lwjgl-opengl-3.3.2.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: lwjgl-opengl-3.3.2-natives-linux.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: lwjgl-opengl-3.3.2-natives-macos.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: lwjgl-opengl-3.3.2-natives-macos-arm64.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: lwjgl-opengl-3.3.2-natives-windows-x86.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: lwjgl-opengl-3.3.2-natives-windows.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: lwjgl-opengl-3.3.2-natives-windows-arm64.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: lwjgl-opencl-3.3.2.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: injected-client-1.11.7.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: json-20090211.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: http-api-1.2.16.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: okhttp-3.14.9.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: okio-1.17.2.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: discord-1.4.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main downloadArtifacts
+INFO: Artifact up-to-date: runelite-api-1.11.7-runtime.jar
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main main
+INFO: Stripping problematic JVM arg: -XX:+DisableAttachMechanism
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main main
+INFO: Stripping problematic JVM arg: -Xincgc
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main main
+INFO: Stripping problematic JVM arg: -XX:+UseConcMarkSweepGC
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main main
+INFO: Stripping problematic JVM arg: -XX:+UseParNewGC
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main main
+INFO: Launching RuneLite with agent injected (using -cp)...
+May 07, 2025 5:13:48 PM com.osrshelper.launcher.Main main
+INFO: Command: java -cp C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\aopalliance-1.0.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\client-1.11.7.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\commons-lang3-3.7.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\commons-text-1.2.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\discord-1.4.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\flatlaf-3.2.5-rl4.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\gson-2.8.5.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\guava-23.2-jre.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\guice-4.1.0-no_aop.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\http-api-1.2.16.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\injected-client-1.11.7.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\javax.inject-1.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\jna-5.9.0.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\jna-platform-5.9.0.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\jopt-simple-5.0.1.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\json-20090211.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\jsr305-3.0.2.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\logback-classic-1.2.9.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\logback-core-1.2.9.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\lwjgl-3.3.2-natives-linux.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\lwjgl-3.3.2-natives-macos-arm64.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\lwjgl-3.3.2-natives-macos.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\lwjgl-3.3.2-natives-windows-arm64.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\lwjgl-3.3.2-natives-windows-x86.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\lwjgl-3.3.2-natives-windows.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\lwjgl-3.3.2.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\lwjgl-opencl-3.3.2.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\lwjgl-opengl-3.3.2-natives-linux.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\lwjgl-opengl-3.3.2-natives-macos-arm64.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\lwjgl-opengl-3.3.2-natives-macos.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\lwjgl-opengl-3.3.2-natives-windows-arm64.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\lwjgl-opengl-3.3.2-natives-windows-x86.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\lwjgl-opengl-3.3.2-natives-windows.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\lwjgl-opengl-3.3.2.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\okhttp-3.14.9.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\okio-1.17.2.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\protobuf-javalite-3.21.12.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\rlawt-1.5.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\runelite-api-1.11.7-runtime.jar;C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\osrs-helper-launcher\cache\client-artifacts\slf4j-api-1.7.25.jar -javaagent:C:\Users\loomy\Dev\projects\osrs-runelite-agent-helper\osrs-helper-launcher\..\osrs-helper-agent\target\osrs-helper-agent-1.0-SNAPSHOT-shaded.jar -Xmx768m -Xss2m -XX:CompileThreshold=1500 net.runelite.client.RuneLite
+May 07, 2025 5:14:26 PM com.osrshelper.launcher.Main main
+INFO: RuneLite process exited with code: 0

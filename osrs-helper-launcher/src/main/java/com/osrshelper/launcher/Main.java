@@ -67,15 +67,40 @@ public class Main {
                 logger.severe("Agent JAR not found at: " + agentJar + ". Please build the agent project first.");
                 return;
             }
+            // Filter problematic JVM args
+            List<String> filteredJvmArgs = new ArrayList<>();
+            for (String arg : info.clientJvmArguments) {
+                if (arg.equals("-Xincgc") ||
+                    arg.equals("-XX:+UseConcMarkSweepGC") ||
+                    arg.equals("-XX:+UseParNewGC") ||
+                    arg.equals("-XX:+DisableAttachMechanism")) {
+                    logger.info("Stripping problematic JVM arg: " + arg);
+                    continue;
+                }
+                filteredJvmArgs.add(arg);
+            }
+            // Build classpath from all JARs in ARTIFACTS_DIR
+            StringBuilder classpath = new StringBuilder();
+            try {
+                Files.list(Path.of(ARTIFACTS_DIR))
+                    .filter(p -> p.toString().endsWith(".jar"))
+                    .forEach(p -> {
+                        if (classpath.length() > 0) classpath.append(";");
+                        classpath.append(p.toAbsolutePath());
+                    });
+            } catch (IOException e) {
+                logger.severe("Failed to build classpath: " + e.getMessage());
+                return;
+            }
             // Build command
             List<String> cmd = new ArrayList<>();
             cmd.add("java");
+            cmd.add("-cp");
+            cmd.add(classpath.toString());
             cmd.add("-javaagent:" + agentJar.toAbsolutePath());
-            // Add JVM args from bootstrap.json
-            cmd.addAll(info.clientJvmArguments);
-            cmd.add("-jar");
-            cmd.add(clientJar.toAbsolutePath().toString());
-            logger.info("Launching RuneLite with agent injected...");
+            cmd.addAll(filteredJvmArgs);
+            cmd.add("net.runelite.client.RuneLite");
+            logger.info("Launching RuneLite with agent injected (using -cp)...");
             logger.info("Command: " + String.join(" ", cmd));
             ProcessBuilder pb = new ProcessBuilder(cmd);
             pb.inheritIO(); // Show output in current console

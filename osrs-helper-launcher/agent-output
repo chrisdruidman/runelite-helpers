@@ -1,0 +1,4 @@
+May 07, 2025 5:13:48 PM com.osrshelper.agent.Agent premain
+INFO: Agent started at 2025-05-07 17:13:48
+May 07, 2025 5:13:48 PM com.osrshelper.agent.Agent runAgentLogic
+SEVERE: Could not find RuneLite Client instance via reflection.
