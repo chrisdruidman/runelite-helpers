@@ -16,9 +16,15 @@ runelite/
 
 # Ignore Maven target directories
 **/target/
+osrs-helper-agent/target/
+osrs-helper-launcher/target/
 
 # Ignore OS-specific files
 Thumbs.db
 
 # Ignore launcher output log
 osrs-helper-launcher/launcher-output.txt
+
+# Log files
+osrs-helper-agent/agent-output
+osrs-helper-launcher/launcher-output
