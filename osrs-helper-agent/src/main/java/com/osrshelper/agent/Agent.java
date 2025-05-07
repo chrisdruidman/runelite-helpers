@@ -5,22 +5,59 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.io.IOException;
 import java.lang.instrument.Instrumentation;
+import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
+import net.runelite.api.Client;
 
 public class Agent {
     private static final String LOG_FILE = "agent-output";
     private static final Logger logger = Logger.getLogger("AgentLogger");
+    private static final Map<String, Module> modules = new HashMap<>();
 
     public static void premain(String agentArgs, Instrumentation inst) {
         setupLogging();
         logger.info("Agent started at " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
-        // ...future extensible agent logic...
+        try {
+            // Use reflection to find the RuneLite Client instance
+            Class<?> clientClass = Class.forName("net.runelite.client.RuneLite");
+            Object runeliteInstance = null;
+            for (Object o : java.lang.management.ManagementFactory.getRuntimeMXBean().getInputArguments()) {
+                // This is a placeholder for more robust client instance discovery if needed
+            }
+            // Try to find a static field of type Client
+            Client client = null;
+            for (Class<?> clazz : clientClass.getDeclaredClasses()) {
+                if (Client.class.isAssignableFrom(clazz)) {
+                    for (Field field : clazz.getDeclaredFields()) {
+                        if (Client.class.isAssignableFrom(field.getType())) {
+                            field.setAccessible(true);
+                            client = (Client) field.get(null);
+                            break;
+                        }
+                    }
+                }
+            }
+            if (client == null) {
+                logger.severe("Could not find RuneLite Client instance via reflection.");
+                return;
+            }
+            // Instantiate the real game state provider
+            RealGameStateProvider gameStateProvider = new RealGameStateProvider(client);
+            // Register modules
+            registerModule(new AgilityModule(gameStateProvider));
+            // Example: run the Agility module
+            runModule("agility");
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Agent initialization failed", e);
+        }
     }
 
     private static void setupLogging() {
@@ -44,6 +81,25 @@ public class Agent {
             logger.setLevel(Level.ALL);
         } catch (IOException e) {
             System.err.println("Failed to set up logging: " + e.getMessage());
+        }
+    }
+
+    public static void registerModule(Module module) {
+        modules.put(module.getName().toLowerCase(), module);
+        logger.info("Registered module: " + module.getName());
+    }
+
+    public static Module getModule(String name) {
+        return modules.get(name.toLowerCase());
+    }
+
+    public static void runModule(String name) {
+        Module module = getModule(name);
+        if (module != null) {
+            logger.info("Running module: " + name);
+            module.run();
+        } else {
+            logger.warning("Module not found: " + name);
         }
     }
 }
