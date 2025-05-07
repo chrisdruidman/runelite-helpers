@@ -6,9 +6,11 @@ import java.util.Map;
 public class AgilityModule implements Module {
     private final Map<String, AgilityCourse> courses = new HashMap<>();
     private final GameStateProvider gameStateProvider;
+    private final MouseInputService mouseInputService;
 
-    public AgilityModule(GameStateProvider gameStateProvider) {
+    public AgilityModule(GameStateProvider gameStateProvider, MouseInputService mouseInputService) {
         this.gameStateProvider = gameStateProvider;
+        this.mouseInputService = mouseInputService;
         // Register courses here
         registerCourse("canifis", new CanifisCourse(gameStateProvider));
         // Add more courses as needed
@@ -44,5 +46,23 @@ public class AgilityModule implements Module {
         } else {
             System.out.println("Course not found: " + name);
         }
+    }
+
+    /**
+     * Allows a course to request a mouse click at the given coordinates.
+     * This keeps input logic at the module level.
+     */
+    @Override
+    public void clickAt(int x, int y) {
+        mouseInputService.clickAt(x, y);
+    }
+
+    /**
+     * Allows a course to request a mouse click on a game object by ID.
+     * This keeps input logic at the module level.
+     */
+    @Override
+    public void clickGameObject(int id) {
+        mouseInputService.clickGameObject(id);
     }
 }
