@@ -1,18 +1,18 @@
 package com.osrshelper.agent;
 
+import com.osrshelper.agent.ServiceRegistry;
+
 import java.util.HashMap;
 import java.util.Map;
 
 public class AgilityModule implements Module {
     private final Map<String, AgilityCourse> courses = new HashMap<>();
-    private final GameStateProvider gameStateProvider;
-    private final MouseInputService mouseInputService;
+    private final ServiceRegistry serviceRegistry;
 
-    public AgilityModule(GameStateProvider gameStateProvider, MouseInputService mouseInputService) {
-        this.gameStateProvider = gameStateProvider;
-        this.mouseInputService = mouseInputService;
+    public AgilityModule(ServiceRegistry serviceRegistry) {
+        this.serviceRegistry = serviceRegistry;
         // Register courses here
-        registerCourse("canifis", new CanifisCourse(gameStateProvider));
+        registerCourse("canifis", new CanifisCourse(serviceRegistry.get(GameStateProvider.class)));
         // Add more courses as needed
     }
 
@@ -23,6 +23,8 @@ public class AgilityModule implements Module {
 
     @Override
     public void run() {
+        GameStateProvider gameStateProvider = serviceRegistry.get(GameStateProvider.class);
+        MouseInputService mouseInputService = serviceRegistry.get(MouseInputService.class);
         // Default: run the first registered course (can be improved for user selection)
         if (!courses.isEmpty()) {
             courses.values().iterator().next().run();
@@ -54,6 +56,7 @@ public class AgilityModule implements Module {
      */
     @Override
     public void clickAt(int x, int y) {
+        MouseInputService mouseInputService = serviceRegistry.get(MouseInputService.class);
         mouseInputService.clickAt(x, y);
     }
 
@@ -63,6 +66,7 @@ public class AgilityModule implements Module {
      */
     @Override
     public void clickGameObject(int id) {
+        MouseInputService mouseInputService = serviceRegistry.get(MouseInputService.class);
         mouseInputService.clickGameObject(id);
     }
 }

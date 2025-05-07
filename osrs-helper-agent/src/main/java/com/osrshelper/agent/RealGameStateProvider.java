@@ -65,4 +65,31 @@ public class RealGameStateProvider implements GameStateProvider {
         }
         return null;
     }
+
+    @Override
+    public WorldPoint getObjectWorldPoint(int objectId) {
+        try {
+            Scene scene = client.getScene();
+            if (scene == null) return null;
+            for (int x = 0; x < scene.getTiles().length; x++) {
+                for (int y = 0; y < scene.getTiles()[x].length; y++) {
+                    for (int z = 0; z < scene.getTiles()[x][y].length; z++) {
+                        Tile tile = scene.getTiles()[x][y][z];
+                        if (tile == null) continue;
+                        GameObject[] gameObjects = tile.getGameObjects();
+                        if (gameObjects == null) continue;
+                        for (GameObject obj : gameObjects) {
+                            if (obj == null) continue;
+                            if (obj.getId() == objectId) {
+                                return obj.getWorldLocation();
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Failed to get world point for object id " + objectId, e);
+        }
+        return null;
+    }
 }

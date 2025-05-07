@@ -1,6 +1,5 @@
 package com.osrshelper.agent;
 
-// ...existing imports...
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.IOException;
@@ -16,6 +15,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import net.runelite.api.Client;
+import net.runelite.client.input.MouseManager;
 
 public class Agent {
     private static final String LOG_FILE = "agent-output";
@@ -49,10 +49,44 @@ public class Agent {
                 logger.severe("Could not find RuneLite Client instance via reflection.");
                 return;
             }
+            // Find MouseManager instance via reflection
+            Class<?> mouseManagerClass = Class.forName("net.runelite.client.input.MouseManager");
+            Object mouseManagerInstance = null;
+            // Try to find a static or singleton instance of MouseManager
+            // Look for a static field or singleton pattern
+            for (Field field : mouseManagerClass.getDeclaredFields()) {
+                if (MouseManager.class.isAssignableFrom(field.getType())) {
+                    field.setAccessible(true);
+                    mouseManagerInstance = field.get(null);
+                    break;
+                }
+            }
+            if (mouseManagerInstance == null) {
+                // Try to find MouseManager from the RuneLite client instance if available
+                for (Field field : clientClass.getDeclaredFields()) {
+                    if (MouseManager.class.isAssignableFrom(field.getType())) {
+                        field.setAccessible(true);
+                        mouseManagerInstance = field.get(runeliteInstance);
+                        break;
+                    }
+                }
+            }
+            if (mouseManagerInstance == null) {
+                logger.severe("Could not find MouseManager instance via reflection.");
+                return;
+            }
             // Instantiate the real game state provider
             RealGameStateProvider gameStateProvider = new RealGameStateProvider(client);
-            // Register modules
-            registerModule(new AgilityModule(gameStateProvider));
+            // Create ServiceRegistry and register services
+            ServiceRegistry serviceRegistry = new ServiceRegistry();
+            serviceRegistry.register(Client.class, client);
+            serviceRegistry.register(RealGameStateProvider.class, gameStateProvider);
+            serviceRegistry.register(MouseManager.class, (MouseManager) mouseManagerInstance);
+            // Create MouseInputService with all dependencies
+            MouseInputService mouseInputService = new MouseInputService((MouseManager) mouseManagerInstance, gameStateProvider, client);
+            serviceRegistry.register(MouseInputService.class, mouseInputService);
+            // Register modules, passing services as needed
+            registerModule(new AgilityModule(gameStateProvider, mouseInputService));
             // Example: run the Agility module
             runModule("agility");
         } catch (Exception e) {
