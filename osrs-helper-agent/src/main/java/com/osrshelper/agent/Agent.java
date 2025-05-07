@@ -94,20 +94,26 @@ public class Agent {
                     return;
                 }
                 logger.info("Successfully found MouseManager instance via constructor instrumentation.");
-                // Instantiate the real game state provider
-                RealGameStateProvider gameStateProvider = new RealGameStateProvider(client);
+                // Instantiate and register the real game state provider using the interface type
+                GameStateProvider gameStateProvider = new RealGameStateProvider(client);
+                logger.info("Registering GameStateProvider (RealGameStateProvider) in ServiceRegistry");
                 // Create ServiceRegistry and register services
                 ServiceRegistry serviceRegistry = new ServiceRegistry();
                 serviceRegistry.register(Client.class, client);
-                serviceRegistry.register(RealGameStateProvider.class, gameStateProvider);
+                serviceRegistry.register(GameStateProvider.class, gameStateProvider);
+                logger.info("Registered Client and GameStateProvider");
                 serviceRegistry.register(MouseManager.class, (MouseManager) mouseManagerInstance);
+                logger.info("Registered MouseManager");
                 // Create MouseInputService with all dependencies
                 MouseInputService mouseInputService = new MouseInputService(serviceRegistry);
                 serviceRegistry.register(MouseInputService.class, mouseInputService);
+                logger.info("Registered MouseInputService");
                 // Register modules
-                modules.put("agility", new AgilityModule(serviceRegistry));
-                // Launch overlay for toggling modules
+                AgilityModule agilityModule = new AgilityModule(serviceRegistry);
+                modules.put("agility", agilityModule);
+                logger.info("Registered AgilityModule");
                 OverlayController overlay = new OverlayController(modules);
+                overlay.setCourseSelectionListener(agilityModule); // Wire up course selection listener
                 overlay.show();
                 // Example: run the Agility module if enabled
                 if (overlay.isModuleEnabled("agility")) {

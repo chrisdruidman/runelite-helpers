@@ -21,12 +21,6 @@ public class CanifisCourse implements AgilityCourse {
     }
 
     @Override
-    public void run() {
-        int nextObstacleId = getNextObstacleId();
-        System.out.println("Next obstacle ID: " + nextObstacleId);
-        // TODO: Add logic to detect player position and interact with obstacles
-    }
-
     public int getNextObstacleId() {
         if (currentStep < OBSTACLE_IDS.length) {
             return OBSTACLE_IDS[currentStep];
@@ -34,12 +28,14 @@ public class CanifisCourse implements AgilityCourse {
         return -1;
     }
 
+    @Override
     public void advanceStep() {
         if (currentStep < OBSTACLE_IDS.length - 1) {
             currentStep++;
         }
     }
 
+    @Override
     public void resetCourse() {
         currentStep = 0;
     }
@@ -54,35 +50,24 @@ public class CanifisCourse implements AgilityCourse {
      * @param playerObjectId The object ID the player is currently interacting with or near.
      * @return true if at the correct obstacle, false otherwise.
      */
+    @Override
     public boolean isAtExpectedObstacle(int playerObjectId) {
         return playerObjectId == getNextObstacleId();
     }
 
     /**
-     * Placeholder for interacting with the current obstacle.
-     * In a real implementation, this would trigger a click or action.
+     * Main automation step: checks if the player is at the correct obstacle.
+     * Returns the obstacle ID if action should be taken, else -1.
      */
-    public void interactWithCurrentObstacle() {
-        int obstacleId = getNextObstacleId();
-        System.out.println("Interacting with obstacle ID: " + obstacleId);
-        // TODO: Implement actual interaction logic
-    }
-
-    /**
-     * Main automation step: checks if the player is at the correct obstacle, interacts, and advances.
-     * Uses the GameStateProvider for modular state access.
-     */
-    public void step() {
+    @Override
+    public int getActionableObstacleId() {
         int[] playerNearbyObjectIds = gameStateProvider.getNearbyObstacleIds();
         int expectedId = getNextObstacleId();
         for (int id : playerNearbyObjectIds) {
             if (id == expectedId) {
-                System.out.println("Player is at obstacle " + expectedId + ", interacting and advancing.");
-                interactWithCurrentObstacle();
-                advanceStep();
-                return;
+                return expectedId;
             }
         }
-        System.out.println("Player not at expected obstacle. Waiting...");
+        return -1;
     }
 }
