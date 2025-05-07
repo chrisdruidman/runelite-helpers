@@ -2,7 +2,7 @@
 
 We are making a tool to act as a helper for Old School RuneScape for various tasks. We will be targetting the RuneLite client for this purpose, as it uses Java and this allows us more options for deep, unrestricted automation. We will use a Java agent project for injecting automation into the RuneLite client, and a custom launcher to assist with our injection.
 
-The RuneLite source code is found in the 'runelite' folder. You will keep this in context when thinking about our implementation. Refer to it to assist us in each step whilst creating our helper. DO NOT TOUCH THE RUNELITE FOLDER. Keep all of our code code separate from the RuneLite source folder.
+The RuneLite source code is found in the 'runelite' folder. YOU WILL keep this in context when thinking about our implementation. YOU MUST REFER TO THIS as it will assist us in each step whilst creating our helper. DO NOT TOUCH THE RUNELITE FOLDER. Keep all of our code code separate from the RuneLite source folder.
 
 We will place the agent code inside the 'osrs-helper-agent' folder. ONLY PLACE AGENT CODE IN THIS FOLDER. The code structure should be modular and allow for extensibility, as there will eventually be multiple tasks that the agent can run. The agent will output debug and error info to the console and to a log file called 'agent-output'. The log file should be cleared at the start of each run to avoid large file sizes. You will keep the log file in context when available so you have direct access to any debugging or error information.
 
