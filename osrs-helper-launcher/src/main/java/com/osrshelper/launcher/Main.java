@@ -49,6 +49,43 @@ public class Main {
             logger.info("Launcher JVM args: " + info.launcherArguments);
             // Download all artifacts if needed
             downloadArtifacts(info.artifacts);
+
+            // === AGENT INJECTION AND CLIENT LAUNCH ===
+            BootstrapInfo.Artifact clientArtifact2 = info.getClientArtifact();
+            if (clientArtifact2 == null) {
+                logger.severe("No RuneLite client JAR found in artifacts. Aborting launch.");
+                return;
+            }
+            Path clientJar = Path.of(ARTIFACTS_DIR, clientArtifact2.name);
+            if (!Files.exists(clientJar)) {
+                logger.severe("RuneLite client JAR not found at: " + clientJar);
+                return;
+            }
+            // Locate agent JAR (relative to launcher project root)
+            Path agentJar = Path.of("..", "osrs-helper-agent", "target", "osrs-helper-agent-1.0-SNAPSHOT-shaded.jar").normalize();
+            if (!Files.exists(agentJar)) {
+                logger.severe("Agent JAR not found at: " + agentJar + ". Please build the agent project first.");
+                return;
+            }
+            // Build command
+            List<String> cmd = new ArrayList<>();
+            cmd.add("java");
+            cmd.add("-javaagent:" + agentJar.toAbsolutePath());
+            // Add JVM args from bootstrap.json
+            cmd.addAll(info.clientJvmArguments);
+            cmd.add("-jar");
+            cmd.add(clientJar.toAbsolutePath().toString());
+            logger.info("Launching RuneLite with agent injected...");
+            logger.info("Command: " + String.join(" ", cmd));
+            ProcessBuilder pb = new ProcessBuilder(cmd);
+            pb.inheritIO(); // Show output in current console
+            try {
+                Process proc = pb.start();
+                int exitCode = proc.waitFor();
+                logger.info("RuneLite process exited with code: " + exitCode);
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "Failed to launch RuneLite with agent", e);
+            }
             // ...future extensibility here...
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Failed to get or parse bootstrap.json", e);
