@@ -5,7 +5,7 @@ import com.osrshelper.agent.ServiceRegistry;
 import java.util.HashMap;
 import java.util.Map;
 
-public class AgilityModule implements Module {
+public class AgilityModule implements HelperModule {
     private final Map<String, AgilityCourse> courses = new HashMap<>();
     private final ServiceRegistry serviceRegistry;
 

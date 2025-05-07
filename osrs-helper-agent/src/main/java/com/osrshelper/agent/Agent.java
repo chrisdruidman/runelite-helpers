@@ -20,7 +20,7 @@ import net.runelite.client.input.MouseManager;
 public class Agent {
     private static final String LOG_FILE = "agent-output";
     private static final Logger logger = Logger.getLogger("AgentLogger");
-    private static final Map<String, Module> modules = new HashMap<>();
+    private static final Map<String, HelperModule> modules = new HashMap<>();
 
     public static void premain(String agentArgs, Instrumentation inst) {
         setupLogging();
@@ -83,10 +83,10 @@ public class Agent {
             serviceRegistry.register(RealGameStateProvider.class, gameStateProvider);
             serviceRegistry.register(MouseManager.class, (MouseManager) mouseManagerInstance);
             // Create MouseInputService with all dependencies
-            MouseInputService mouseInputService = new MouseInputService((MouseManager) mouseManagerInstance, gameStateProvider, client);
+            MouseInputService mouseInputService = new MouseInputService(serviceRegistry);
             serviceRegistry.register(MouseInputService.class, mouseInputService);
-            // Register modules, passing services as needed
-            registerModule(new AgilityModule(gameStateProvider, mouseInputService));
+            // Register modules
+            modules.put("agility", new AgilityModule(serviceRegistry));
             // Launch overlay for toggling modules
             OverlayController overlay = new OverlayController(modules);
             overlay.show();
@@ -123,17 +123,17 @@ public class Agent {
         }
     }
 
-    public static void registerModule(Module module) {
+    public static void registerModule(HelperModule module) {
         modules.put(module.getName().toLowerCase(), module);
         logger.info("Registered module: " + module.getName());
     }
 
-    public static Module getModule(String name) {
+    public static HelperModule getModule(String name) {
         return modules.get(name.toLowerCase());
     }
 
     public static void runModule(String name) {
-        Module module = getModule(name);
+        HelperModule module = getModule(name);
         if (module != null) {
             logger.info("Running module: " + name);
             module.run();

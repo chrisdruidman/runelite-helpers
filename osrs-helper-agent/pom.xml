@@ -8,6 +8,22 @@
     <packaging>jar</packaging>
     <name>OSRS Helper Agent</name>
     <description>Java agent for automating RuneLite client tasks</description>
+    <dependencies>
+        <dependency>
+            <groupId>net.runelite</groupId>
+            <artifactId>runelite-api</artifactId>
+            <version>1.11.8-SNAPSHOT</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/../runelite/runelite-api/target/runelite-api-1.11.8-SNAPSHOT.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>net.runelite</groupId>
+            <artifactId>runelite-client</artifactId>
+            <version>1.11.8-SNAPSHOT</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/../runelite/runelite-client/target/client-1.11.8-SNAPSHOT.jar</systemPath>
+        </dependency>
+    </dependencies>
     <build>
         <plugins>
             <plugin>
@@ -31,6 +47,24 @@
                         </manifestEntries>
                     </archive>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.5.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
+                            <shadedClassifierName>shaded</shadedClassifierName>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

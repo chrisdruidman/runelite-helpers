@@ -14,4 +14,10 @@ public class DummyGameStateProvider implements GameStateProvider {
         // Dummy position for testing
         return new WorldPoint(3500, 3500, 0);
     }
+
+    @Override
+    public WorldPoint getObjectWorldPoint(int objectId) {
+        // Dummy implementation: always return null
+        return null;
+    }
 }
