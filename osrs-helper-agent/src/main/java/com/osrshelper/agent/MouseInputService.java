@@ -4,12 +4,12 @@ import com.osrshelper.agent.ServiceRegistry;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Frame;
-import java.awt.Polygon;
 import java.awt.event.MouseEvent;
-import java.lang.reflect.Field;
 import java.util.Random;
 import java.util.logging.Logger;
 import net.runelite.api.Client;
+import net.runelite.api.MenuAction;
+import net.runelite.api.MenuEntry;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.Point;
@@ -126,12 +126,11 @@ public class MouseInputService {
     }
 
     /**
-     * Simulates a mouse click on a game object by its ID.
-     * Uses the object's clickbox if available, matching RuneLite overlay logic.
-     * @param id The game object ID to click.
+     * Interacts with a game object by programmatically creating a menu entry and invoking the correct menu action using reflection.
+     * @param id The game object ID to interact with.
      */
     public void clickGameObject(int id) {
-        logger.info("[MouseInputService] Attempting to click game object with ID: " + id);
+        logger.info("[MouseInputService] Attempting to interact with game object via forced menu entry for ID: " + id);
         try {
             // Find the TileObject (GameObject, WallObject, DecorativeObject, GroundObject) with the given ID
             net.runelite.api.TileObject foundObject = null;
@@ -144,7 +143,6 @@ public class MouseInputService {
                         for (int y = 0; y < tiles[z][x].length; y++) {
                             net.runelite.api.Tile tile = tiles[z][x][y];
                             if (tile == null) continue;
-                            // Check GameObjects
                             net.runelite.api.GameObject[] gameObjects = tile.getGameObjects();
                             if (gameObjects != null) {
                                 for (net.runelite.api.GameObject obj : gameObjects) {
@@ -154,19 +152,16 @@ public class MouseInputService {
                                     }
                                 }
                             }
-                            // Check WallObject
                             net.runelite.api.WallObject wall = tile.getWallObject();
                             if (wall != null && wall.getId() == id) {
                                 foundObject = wall;
                                 break outer;
                             }
-                            // Check DecorativeObject
                             net.runelite.api.DecorativeObject deco = tile.getDecorativeObject();
                             if (deco != null && deco.getId() == id) {
                                 foundObject = deco;
                                 break outer;
                             }
-                            // Check GroundObject
                             net.runelite.api.GroundObject ground = tile.getGroundObject();
                             if (ground != null && ground.getId() == id) {
                                 foundObject = ground;
@@ -176,153 +171,59 @@ public class MouseInputService {
                     }
                 }
             }
-            if (foundObject != null) {
-                logger.info("[MouseInputService] Found TileObject for ID " + id + ": " + foundObject.getClass().getSimpleName());
-                java.awt.Shape clickbox = null;
-                // Use model-based clickbox if possible
-                if (foundObject instanceof net.runelite.api.Renderable) {
-                    net.runelite.api.Renderable renderable = (net.runelite.api.Renderable) foundObject;
-                    net.runelite.api.Model model = renderable.getModel();
-                    if (model != null) {
-                        LocalPoint lp = foundObject.getLocalLocation();
-                        int orientation = 0;
-                        try {
-                            orientation = (Integer) foundObject.getClass().getMethod("getOrientation").invoke(foundObject);
-                        } catch (Exception ignored) {}
-                        int z = Perspective.getTileHeight(client, lp, foundObject.getPlane());
-                        clickbox = Perspective.getClickbox(client, model, orientation, lp.getX(), lp.getY(), z);
-                        if (clickbox != null) {
-                            logger.info("[MouseInputService] Using model-based clickbox for " + foundObject.getClass().getSimpleName());
-                        }
-                    }
-                }
-                if (clickbox == null) {
-                    clickbox = foundObject.getClickbox();
-                    logger.info("[MouseInputService] Using fallback getClickbox() for " + foundObject.getClass().getSimpleName());
-                }
-                lastClickbox = clickbox; // Store for overlay
-                if (clickbox != null) {
-                    if (clickbox instanceof Polygon) {
-                        Polygon poly = (Polygon) clickbox;
-                        // Compute centroid
-                        double cx = 0, cy = 0, area = 0;
-                        for (int i = 0, j = poly.npoints - 1; i < poly.npoints; j = i++) {
-                            double temp = poly.xpoints[j] * poly.ypoints[i] - poly.xpoints[i] * poly.ypoints[j];
-                            area += temp;
-                            cx += (poly.xpoints[j] + poly.xpoints[i]) * temp;
-                            cy += (poly.ypoints[j] + poly.ypoints[i]) * temp;
-                        }
-                        area *= 0.5;
-                        int x, y;
-                        if (area != 0) {
-                            cx /= (6 * area);
-                            cy /= (6 * area);
-                            // Add a small random offset (max 3px) for humanization and shift left by 5px
-                            x = (int) Math.round(cx + random.nextInt(7) - 3 - 5);
-                            y = (int) Math.round(cy + random.nextInt(7) - 3);
-                        } else {
-                            x = (int) poly.getBounds().getCenterX() - 5;
-                            y = (int) poly.getBounds().getCenterY();
-                        }
-                        clickAt(x, y);
-                        logger.info("[MouseInputService] Simulated click on game object with ID: " + id + " at (" + x + ", " + y + ") [polygon centroid]");
-                        return;
-                    } else {
-                        java.awt.Rectangle bounds = clickbox.getBounds();
-                        int x = (int) bounds.getCenterX() + random.nextInt(7) - 3;
-                        int y = (int) bounds.getCenterY() + random.nextInt(7) - 3;
-                        clickAt(x, y);
-                        logger.info("[MouseInputService] Simulated click on game object with ID: " + id + " at (" + x + ", " + y + ") [rect center]");
-                        return;
-                    }
-                } else {
-                    logger.info("[MouseInputService] Clickbox was null, falling back to tile poly.");
-                }
-            } else {
-                logger.warning("[MouseInputService] Could not find TileObject for ID: " + id + ". Falling back to previous logic.");
-            }
-            // Fallback: use previous logic (tile poly or localToCanvas)
-            WorldPoint objectWorldPoint = gameStateProvider.getObjectWorldPoint(id);
-            logger.info("[MouseInputService] objectWorldPoint for ID " + id + ": " + objectWorldPoint);
-            if (objectWorldPoint == null) {
-                logger.warning("[MouseInputService] Could not find object with ID: " + id);
+            if (foundObject == null) {
+                logger.warning("[MouseInputService] Could not find TileObject for ID: " + id);
                 return;
             }
-            LocalPoint localPoint = LocalPoint.fromWorld(client, objectWorldPoint);
-            logger.info("[MouseInputService] localPoint for ID " + id + ": " + localPoint);
-            if (localPoint == null) {
-                logger.warning("[MouseInputService] Could not convert WorldPoint to LocalPoint for object ID: " + id);
-                return;
-            }
-            Polygon poly = Perspective.getCanvasTilePoly(client, localPoint);
-            logger.info("[MouseInputService] Polygon for ID " + id + ": " + (poly != null ? poly.getBounds().toString() : "null"));
-            if (poly != null && poly.npoints > 0) {
-                int x = 0, y = 0;
-                int attempts = 0;
-                int minX = poly.getBounds().x;
-                int minY = poly.getBounds().y;
-                int maxX = minX + poly.getBounds().width;
-                int maxY = minY + poly.getBounds().height;
-                boolean found = false;
-                for (attempts = 0; attempts < 20; attempts++) {
-                    poly = Perspective.getCanvasTilePoly(client, localPoint);
-                    x = minX + random.nextInt(Math.max(1, maxX - minX));
-                    y = minY + random.nextInt(Math.max(1, maxY - minY));
-                    if (poly.contains(x, y)) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    // Compute geometric centroid of the polygon
-                    double cx = 0, cy = 0;
-                    double area = 0;
-                    for (int i = 0, j = poly.npoints - 1; i < poly.npoints; j = i++) {
-                        double temp = poly.xpoints[j] * poly.ypoints[i] - poly.xpoints[i] * poly.ypoints[j];
-                        area += temp;
-                        cx += (poly.xpoints[j] + poly.xpoints[i]) * temp;
-                        cy += (poly.ypoints[j] + poly.ypoints[i]) * temp;
-                    }
-                    area *= 0.5;
-                    if (area != 0) {
-                        cx /= (6 * area);
-                        cy /= (6 * area);
-                        x = (int) Math.round(cx);
-                        y = (int) Math.round(cy);
-                    } else {
-                        int sumX = 0, sumY = 0;
-                        for (int i = 0; i < poly.npoints; i++) {
-                            sumX += poly.xpoints[i];
-                            sumY += poly.ypoints[i];
-                        }
-                        x = sumX / poly.npoints;
-                        y = sumY / poly.npoints;
-                    }
-                }
-                poly = Perspective.getCanvasTilePoly(client, localPoint);
-                if (poly != null && poly.contains(x, y)) {
-                    clickAt(x, y);
-                    logger.info("[MouseInputService] Simulated click on game object with ID: " + id + " at (" + x + ", " + y + ") [in tile polygon]");
-                } else {
-                    Point canvasPoint = Perspective.localToCanvas(client, localPoint, objectWorldPoint.getPlane());
-                    logger.warning("[MouseInputService] Final click point not in polygon after re-fetch, using localToCanvas fallback: " + canvasPoint);
-                    if (canvasPoint != null) {
-                        clickAt(canvasPoint.getX(), canvasPoint.getY());
-                        logger.info("[MouseInputService] Simulated click on game object with ID: " + id + " at (" + canvasPoint.getX() + ", " + canvasPoint.getY() + ") [localToCanvas fallback]");
-                    }
-                }
-            } else {
-                Point canvasPoint = Perspective.localToCanvas(client, localPoint, objectWorldPoint.getPlane());
-                logger.info("[MouseInputService] Fallback Perspective.localToCanvas for ID " + id + ": " + canvasPoint);
-                if (canvasPoint == null) {
-                    logger.warning("[MouseInputService] Could not convert LocalPoint to canvas coordinates for object ID: " + id);
-                    return;
-                }
-                clickAt(canvasPoint.getX(), canvasPoint.getY());
-                logger.info("[MouseInputService] Simulated click on game object with ID: " + id + " at (" + canvasPoint.getX() + ", " + canvasPoint.getY() + ") [fallback center]");
+            // Use object's name as target, and default to "Jump" as the action (option)
+            String target = foundObject.getName();
+            String option = "Jump"; // You can adjust this per obstacle type
+            int param0 = foundObject.getLocalLocation().getSceneX();
+            int param1 = foundObject.getLocalLocation().getSceneY();
+            int identifier = id;
+            int opcode = MenuAction.GAME_OBJECT_FIRST_OPTION.getId();
+            // Create the menu entry
+            try {
+                java.lang.reflect.Method createMenuEntry = client.getClass().getMethod("createMenuEntry", int.class);
+                Object menuEntry = createMenuEntry.invoke(client, 1); // 1 = number of entries to add
+                // Set menu entry fields via reflection
+                java.lang.reflect.Method setOption = menuEntry.getClass().getMethod("setOption", String.class);
+                java.lang.reflect.Method setTarget = menuEntry.getClass().getMethod("setTarget", String.class);
+                java.lang.reflect.Method setIdentifier = menuEntry.getClass().getMethod("setIdentifier", int.class);
+                java.lang.reflect.Method setType = menuEntry.getClass().getMethod("setType", int.class);
+                java.lang.reflect.Method setParam0 = menuEntry.getClass().getMethod("setParam0", int.class);
+                java.lang.reflect.Method setParam1 = menuEntry.getClass().getMethod("setParam1", int.class);
+                setOption.invoke(menuEntry, option);
+                setTarget.invoke(menuEntry, target);
+                setIdentifier.invoke(menuEntry, identifier);
+                setType.invoke(menuEntry, opcode);
+                setParam0.invoke(menuEntry, param0);
+                setParam1.invoke(menuEntry, param1);
+                logger.info("[MouseInputService] Created menu entry for object ID: " + id + ", option: " + option + ", target: " + target);
+                // Now invoke menuAction
+                java.lang.reflect.Method menuAction = client.getClass().getDeclaredMethod(
+                    "menuAction",
+                    int.class, int.class, int.class, int.class, String.class, String.class, int.class, int.class
+                );
+                menuAction.setAccessible(true);
+                menuAction.invoke(
+                    client,
+                    param0,
+                    param1,
+                    opcode,
+                    identifier,
+                    option,
+                    target,
+                    0, // canvasX
+                    0  // canvasY
+                );
+                logger.info("[MouseInputService] Invoked menuAction via reflection for object ID: " + id);
+            } catch (Exception e) {
+                logger.severe("[MouseInputService] Reflection failed to create/invoke menu entry: " + e.getMessage());
+                e.printStackTrace();
             }
         } catch (Exception e) {
-            logger.severe("[MouseInputService] Failed to simulate click on game object: " + e.getMessage());
+            logger.severe("[MouseInputService] Failed to interact with game object via forced menu entry: " + e.getMessage());
             e.printStackTrace();
         }
     }

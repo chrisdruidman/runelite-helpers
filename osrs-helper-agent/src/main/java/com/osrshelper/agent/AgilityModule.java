@@ -91,24 +91,24 @@ public class AgilityModule implements HelperModule, OverlayController.CourseSele
                                                         net.runelite.api.GameObject[] gameObjects = tile.getGameObjects();
                                                         if (gameObjects != null) {
                                                             for (net.runelite.api.GameObject obj : gameObjects) {
-                                                                if (obj != null && obj.getId() == nextActionableId && obj.getClickbox() != null) {
+                                                                if (obj != null && obj.getId() == nextActionableId && (obj.getClickbox() != null || net.runelite.api.Perspective.getCanvasTilePoly(client, obj.getLocalLocation()) != null)) {
                                                                     nextObstacleVisible = true;
                                                                     break outer;
                                                                 }
                                                             }
                                                         }
                                                         net.runelite.api.WallObject wall = tile.getWallObject();
-                                                        if (wall != null && wall.getId() == nextActionableId && wall.getClickbox() != null) {
+                                                        if (wall != null && wall.getId() == nextActionableId && (wall.getClickbox() != null || net.runelite.api.Perspective.getCanvasTilePoly(client, wall.getLocalLocation()) != null)) {
                                                             nextObstacleVisible = true;
                                                             break outer;
                                                         }
                                                         net.runelite.api.DecorativeObject deco = tile.getDecorativeObject();
-                                                        if (deco != null && deco.getId() == nextActionableId && deco.getClickbox() != null) {
+                                                        if (deco != null && deco.getId() == nextActionableId && (deco.getClickbox() != null || net.runelite.api.Perspective.getCanvasTilePoly(client, deco.getLocalLocation()) != null)) {
                                                             nextObstacleVisible = true;
                                                             break outer;
                                                         }
                                                         net.runelite.api.GroundObject ground = tile.getGroundObject();
-                                                        if (ground != null && ground.getId() == nextActionableId && ground.getClickbox() != null) {
+                                                        if (ground != null && ground.getId() == nextActionableId && (ground.getClickbox() != null || net.runelite.api.Perspective.getCanvasTilePoly(client, ground.getLocalLocation()) != null)) {
                                                             nextObstacleVisible = true;
                                                             break outer;
                                                         }
