@@ -28,3 +28,5 @@ osrs-helper-launcher/launcher-output.txt
 # Log files
 osrs-helper-agent/agent-output
 osrs-helper-launcher/launcher-output
+osrs-helper-launcher/agent-output
+osrs-helper-launcher/osrs-helper-launcher/launcher-output
