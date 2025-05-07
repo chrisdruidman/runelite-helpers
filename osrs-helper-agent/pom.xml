@@ -8,6 +8,10 @@
     <packaging>jar</packaging>
     <name>OSRS Helper Agent</name>
     <description>Java agent for automating RuneLite client tasks</description>
+    <properties>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>net.runelite</groupId>
@@ -22,6 +26,16 @@
             <version>1.11.8-SNAPSHOT</version>
             <scope>system</scope>
             <systemPath>${project.basedir}/../runelite/runelite-client/target/client-1.11.8-SNAPSHOT.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm</artifactId>
+            <version>9.6</version>
+        </dependency>
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm-commons</artifactId>
+            <version>9.6</version>
         </dependency>
     </dependencies>
     <build>
@@ -62,6 +76,14 @@
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <shadedArtifactAttached>true</shadedArtifactAttached>
                             <shadedClassifierName>shaded</shadedClassifierName>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <manifestEntries>
+                                        <Premain-Class>com.osrshelper.agent.Agent</Premain-Class>
+                                        <Can-Redefine-Classes>true</Can-Redefine-Classes>
+                                    </manifestEntries>
+                                </transformer>
+                            </transformers>
                         </configuration>
                     </execution>
                 </executions>
