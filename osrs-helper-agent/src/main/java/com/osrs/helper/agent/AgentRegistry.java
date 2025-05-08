@@ -9,6 +9,7 @@ import com.osrs.helper.agent.helpermodules.AgentModule;
 import com.osrs.helper.agent.services.DebugLoggingService;
 import com.osrs.helper.agent.helpermodules.dummy.DummyModule;
 import com.osrs.helper.agent.listeners.OverlayModuleToggleListener;
+import com.osrs.helper.agent.helpermodules.agility.AgilityModule;
 
 public class AgentRegistry {
     private final List<AgentService> services = new ArrayList<>();
@@ -21,6 +22,7 @@ public class AgentRegistry {
         services.add(new DebugLoggingService());
         services.add(overlayInjectionService);
         modules.add(new DummyModule());
+        modules.add(new AgilityModule());
     }
 
     public List<AgentService> getServices() {
