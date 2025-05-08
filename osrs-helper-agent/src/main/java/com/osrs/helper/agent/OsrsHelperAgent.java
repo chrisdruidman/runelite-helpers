@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.logging.*;
 import com.osrs.helper.agent.overlay.OverlayWindow;
 import com.osrs.helper.agent.listeners.OverlayModuleToggleListener;
+import com.osrs.helper.agent.services.AgentService;
 
 public class OsrsHelperAgent {
     private static final Logger logger = Logger.getLogger("OsrsHelperAgent");
@@ -43,12 +44,21 @@ public class OsrsHelperAgent {
     private static void initializeAgent() {
         AgentRegistry registry = new AgentRegistry();
         // Initialize all services
-        for (var service : registry.getServices()) {
+        for (AgentService service : registry.getServices()) {
             service.initialize();
         }
         // Initialize and show the overlay with module controls
         overlayWindow = new OverlayWindow(registry.getModules(), registry.getModuleToggleListener());
         java.awt.EventQueue.invokeLater(() -> overlayWindow.showOverlay());
         logger.info("All services initialized. Modules are disabled by default. Overlay started.");
+    }
+
+    public static void launchOverlay() {
+        logger.info("launchOverlay() called via ASM-injected bytecode");
+        java.awt.EventQueue.invokeLater(() -> {
+            if (overlayWindow != null) {
+                overlayWindow.showOverlay();
+            }
+        });
     }
 }
