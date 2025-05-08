@@ -59,8 +59,7 @@ public class MenuActionServiceImpl implements MenuActionService {
         return false;
     }
 
-    @Override
-    public Optional<Object> findMenuEntry(String option, String target) {
+    public Optional<Object> findMenuEntry(String option, String target, Object actionType) {
         if (client == null) {
             logger.severe("Client instance is null in MenuActionServiceImpl");
             return Optional.empty();
@@ -71,10 +70,22 @@ public class MenuActionServiceImpl implements MenuActionService {
         for (MenuEntry entry : entries) {
             String entryOption = Text.removeTags(entry.getOption()).toLowerCase();
             String entryTarget = Text.removeTags(entry.getTarget()).toLowerCase();
-            if (entryOption.equals(optionNorm) && entryTarget.equals(targetNorm)) {
+            boolean typeMatches = true;
+            if (actionType != null) {
+                typeMatches = entry.getType().equals(actionType);
+            }
+            // Allow partial matches: option/target must be contained in the entry (or vice versa)
+            boolean optionMatch = entryOption.contains(optionNorm) || optionNorm.contains(entryOption);
+            boolean targetMatch = entryTarget.contains(targetNorm) || targetNorm.contains(entryTarget);
+            if (optionMatch && targetMatch && typeMatches) {
                 return Optional.of(entry);
             }
         }
         return Optional.empty();
+    }
+
+    @Override
+    public Optional<Object> findMenuEntry(String option, String target) {
+        return findMenuEntry(option, target, null);
     }
 }

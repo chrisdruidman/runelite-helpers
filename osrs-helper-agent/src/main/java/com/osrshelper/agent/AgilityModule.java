@@ -90,14 +90,11 @@ public class AgilityModule implements HelperModule, OverlayController.CourseSele
                             net.runelite.api.Client client = serviceRegistry.get(net.runelite.api.Client.class);
                             if (client != null && client.getLocalPlayer() != null) {
                                 int initialAnimation = client.getLocalPlayer().getAnimation();
-                                long start = System.currentTimeMillis();
                                 while (running.get()) {
                                     int currentAnimation = client.getLocalPlayer().getAnimation();
-                                    // Check if next actionable obstacle is visible
                                     int nextActionableId = finalCourse.getActionableObstacleId();
                                     boolean nextObstacleVisible = false;
                                     if (nextActionableId != -1) {
-                                        // Try to find the TileObject for the next obstacle
                                         net.runelite.api.Scene scene = client.getScene();
                                         if (scene != null) {
                                             net.runelite.api.Tile[][][] tiles = scene.getTiles();
@@ -135,12 +132,11 @@ public class AgilityModule implements HelperModule, OverlayController.CourseSele
                                             }
                                         }
                                     }
+                                    // Only break if animation changed (or ended) AND next obstacle is visible
                                     if ((currentAnimation == -1 || currentAnimation != initialAnimation) && nextObstacleVisible) {
                                         break; // Obstacle cleared and next is visible
                                     }
-                                    if (System.currentTimeMillis() - start > 8000) { // Timeout after 8s
-                                        break;
-                                    }
+                                    // No fallback timeout: only proceed when the above is true
                                     try { Thread.sleep(100); } catch (InterruptedException ignored) {}
                                 }
                             }
