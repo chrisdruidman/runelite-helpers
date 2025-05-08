@@ -23,6 +23,7 @@ Mr Gippity knows that our agent should use this behaviour:
 -   the agent should rely on the right-click menu for interacting with in-game objects
 -   The agent will output debug and error info to the console and to a log file called 'agent-output'
 -   The log file should be cleared at the start of each run to avoid large file sizes
+-   The build should output a shaded jar
 
 Mr Gippity also knows the following:
 
