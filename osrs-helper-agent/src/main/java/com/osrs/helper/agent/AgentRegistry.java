@@ -8,10 +8,12 @@ import com.osrs.helper.agent.services.AgentService;
 import com.osrs.helper.agent.helpermodules.AgentModule;
 import com.osrs.helper.agent.services.DebugLoggingService;
 import com.osrs.helper.agent.helpermodules.dummy.DummyModule;
+import com.osrs.helper.agent.listener.OverlayModuleToggleListener;
 
 public class AgentRegistry {
     private final List<AgentService> services = new ArrayList<>();
     private final List<AgentModule> modules = new ArrayList<>();
+    private final OverlayModuleToggleListener moduleToggleListener = new OverlayModuleToggleListener();
 
     public AgentRegistry() {
         // Register core services and modules here
@@ -25,5 +27,9 @@ public class AgentRegistry {
 
     public List<AgentModule> getModules() {
         return modules;
+    }
+
+    public OverlayModuleToggleListener getModuleToggleListener() {
+        return moduleToggleListener;
     }
 }
