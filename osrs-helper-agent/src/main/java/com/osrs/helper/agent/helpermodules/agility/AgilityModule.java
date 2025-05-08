@@ -1,10 +1,10 @@
 package com.osrs.helper.agent.helpermodules.agility;
 
 import com.osrs.helper.agent.helpermodules.AgentModule;
+import com.osrs.helper.agent.services.AgilityAutomationService;
 
 import java.util.Map;
 import java.util.LinkedHashMap;
-import javax.swing.*;
 
 /**
  * Minimal scaffold for the Agility helper module.
@@ -14,9 +14,10 @@ public class AgilityModule implements AgentModule {
     private boolean enabled = false;
     private final Map<String, AgilityCourse> courses = new LinkedHashMap<>();
     private AgilityCourse selectedCourse = null;
-    private JPanel configPanel;
+    private final AgilityAutomationService automationService;
 
-    public AgilityModule() {
+    public AgilityModule(AgilityAutomationService automationService) {
+        this.automationService = automationService;
         // Register available courses
         AgilityCourse canifis = new CanifisCourse();
         courses.put(canifis.getName(), canifis);
@@ -27,18 +28,21 @@ public class AgilityModule implements AgentModule {
     public void onEnable() {
         if (selectedCourse == null) {
             System.err.println("[AgilityModule] Cannot enable: No course selected!");
-            JOptionPane.showMessageDialog(null, "Please select an agility course before enabling the module.", "Agility Module Warning", JOptionPane.WARNING_MESSAGE);
             enabled = false;
             return;
         }
         enabled = true;
         System.out.println("AgilityModule enabled for course: " + selectedCourse.getName());
+        // Start automation
+        automationService.startAutomation(selectedCourse, getCurrentObstacles());
     }
 
     @Override
     public void onDisable() {
         enabled = false;
         System.out.println("AgilityModule disabled");
+        // Stop automation
+        automationService.stopAutomation();
     }
 
     @Override
@@ -51,26 +55,22 @@ public class AgilityModule implements AgentModule {
         return enabled;
     }
 
-    /**
-     * Returns a configuration panel for the overlay to display.
-     */
-    public JPanel getConfigPanel() {
-        if (configPanel == null) {
-            configPanel = new JPanel();
-            configPanel.setLayout(new BoxLayout(configPanel, BoxLayout.Y_AXIS));
-            configPanel.add(new JLabel("Select Rooftop Course:"));
-            JComboBox<String> courseSelector = new JComboBox<>(courses.keySet().toArray(new String[0]));
-            courseSelector.setSelectedItem(selectedCourse != null ? selectedCourse.getName() : null);
-            courseSelector.addActionListener(e -> {
-                String selected = (String) courseSelector.getSelectedItem();
-                selectedCourse = courses.get(selected);
-            });
-            configPanel.add(courseSelector);
-        }
-        return configPanel;
+    public java.util.Set<String> getCourseNames() {
+        return courses.keySet();
+    }
+
+    public void setSelectedCourse(String courseName) {
+        this.selectedCourse = courses.get(courseName);
     }
 
     public AgilityCourse getSelectedCourse() {
         return selectedCourse;
+    }
+
+    /**
+     * Returns the list of obstacles for the currently selected course, or null if none selected.
+     */
+    public java.util.List<AgilityObstacle> getCurrentObstacles() {
+        return selectedCourse != null ? ((selectedCourse instanceof CanifisCourse) ? ((CanifisCourse) selectedCourse).getObstacles() : null) : null;
     }
 }

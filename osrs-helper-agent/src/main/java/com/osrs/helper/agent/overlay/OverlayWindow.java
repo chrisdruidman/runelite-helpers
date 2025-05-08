@@ -1,6 +1,7 @@
 package com.osrs.helper.agent.overlay;
 
 import com.osrs.helper.agent.helpermodules.AgentModule;
+import com.osrs.helper.agent.helpermodules.agility.AgilityModule;
 import com.osrs.helper.agent.listeners.ModuleToggleListener;
 
 import javax.swing.*;
@@ -61,12 +62,22 @@ public class OverlayWindow extends JFrame {
 
     private void showModuleConfig(AgentModule module) {
         configPanel.removeAll();
-        // If the module provides a config panel, show it
-        try {
-            java.lang.reflect.Method m = module.getClass().getMethod("getConfigPanel");
-            JPanel panel = (JPanel) m.invoke(module);
+        // Agility module: show course selection UI and update module state
+        if (module instanceof AgilityModule agilityModule) {
+            JPanel panel = new JPanel();
+            panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+            panel.add(new JLabel("Select Rooftop Course:"));
+            JComboBox<String> courseSelector = new JComboBox<>(agilityModule.getCourseNames().toArray(new String[0]));
+            String selected = agilityModule.getSelectedCourse() != null ? agilityModule.getSelectedCourse().getName() : null;
+            courseSelector.setSelectedItem(selected);
+            courseSelector.addActionListener(e -> {
+                String selectedCourse = (String) courseSelector.getSelectedItem();
+                agilityModule.setSelectedCourse(selectedCourse);
+            });
+            panel.add(courseSelector);
             configPanel.add(panel, BorderLayout.CENTER);
-        } catch (Exception e) {
+        } else {
+            // Fallback: no options available
             configPanel.add(new JLabel("No options available for this module."), BorderLayout.CENTER);
         }
         configPanel.revalidate();
