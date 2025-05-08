@@ -70,86 +70,96 @@ public class AgilityModule implements HelperModule, OverlayController.CourseSele
                             // Use menu option/target for the actionable obstacle
                             String option = null;
                             String target = null;
+                            CanifisCourse.Obstacle obs = null;
+                            
                             if (finalCourse instanceof CanifisCourse) {
-                                CanifisCourse.Obstacle obs = CanifisCourse.getObstacleById(actionableId);
+                                obs = CanifisCourse.getObstacleById(actionableId);
                                 if (obs != null) {
                                     option = obs.option;
                                     target = obs.target;
                                 }
                             }
+                            
                             // TODO: Add support for other courses here
                             if (option != null && target != null) {
                                 boolean success = menuActionService.invokeMenuAction(option, target);
+                                
                                 if (!success) {
                                     System.err.println("[AgilityModule] Failed to invoke menu action for obstacle id: " + actionableId + " (" + option + ", " + target + ")");
+                                    // If we failed to find the menu entry, wait before trying again
+                                    // This prevents the module from immediately moving to the next obstacle
+                                    try { Thread.sleep(2000); } catch (InterruptedException ignored) {}
+                                    continue; // Skip to next loop iteration without advancing step
+                                }
+                                
+                                // We successfully clicked an obstacle, now wait for the animation/movement to complete
+                                net.runelite.api.Client client = serviceRegistry.get(net.runelite.api.Client.class);
+                                if (client != null && client.getLocalPlayer() != null) {
+                                    int initialAnimation = client.getLocalPlayer().getAnimation();
+                                    int initialX = client.getLocalPlayer().getLocalLocation().getX();
+                                    int initialY = client.getLocalPlayer().getLocalLocation().getY();
+                                    int initialZ = client.getLocalPlayer().getLocalLocation().getSceneY();
+                                    
+                                    // Track when animation starts (may not start immediately after click)
+                                    long startTime = System.currentTimeMillis();
+                                    boolean animationStarted = false;
+                                    boolean obstacleCompleted = false;
+                                    
+                                    // Wait loop for obstacle completion
+                                    while (running.get() && !obstacleCompleted) {
+                                        if (client.getLocalPlayer() == null) {
+                                            break; // Player no longer available
+                                        }
+                                        
+                                        int currentAnimation = client.getLocalPlayer().getAnimation();
+                                        int currentX = client.getLocalPlayer().getLocalLocation().getX();
+                                        int currentY = client.getLocalPlayer().getLocalLocation().getY();
+                                        int currentZ = client.getLocalPlayer().getLocalLocation().getSceneY();
+                                        
+                                        // Check if animation started
+                                        if (!animationStarted && currentAnimation != -1 && currentAnimation != initialAnimation) {
+                                            animationStarted = true;
+                                            System.out.println("[AgilityModule] Animation started for obstacle: " + actionableId);
+                                        }
+                                        
+                                        // Criteria for obstacle completion: 
+                                        // 1. Animation changed and then went back to idle
+                                        // 2. Player position changed significantly (moved to next obstacle)
+                                        // 3. Or a significant time passed (fallback)
+                                        
+                                        boolean positionChanged = Math.abs(currentX - initialX) > 300 || 
+                                                                 Math.abs(currentY - initialY) > 300 ||
+                                                                 currentZ != initialZ;
+                                        
+                                        boolean animationComplete = animationStarted && currentAnimation == -1;
+                                        long timeElapsed = System.currentTimeMillis() - startTime;
+                                        
+                                        if ((animationComplete && positionChanged) || 
+                                            (animationStarted && timeElapsed > 5000) ||  // 5 second timeout after animation starts
+                                            timeElapsed > 10000) {                       // 10 second absolute timeout
+                                            obstacleCompleted = true;
+                                            System.out.println("[AgilityModule] Obstacle completed: " + actionableId);
+                                        }
+                                        
+                                        try { Thread.sleep(100); } catch (InterruptedException ignored) {}
+                                    }
                                 }
                             } else {
                                 System.err.println("[AgilityModule] No menu option/target mapping for obstacle id: " + actionableId);
                             }
-                            // Wait for player animation to change or become idle
-                            net.runelite.api.Client client = serviceRegistry.get(net.runelite.api.Client.class);
-                            if (client != null && client.getLocalPlayer() != null) {
-                                int initialAnimation = client.getLocalPlayer().getAnimation();
-                                while (running.get()) {
-                                    int currentAnimation = client.getLocalPlayer().getAnimation();
-                                    int nextActionableId = finalCourse.getActionableObstacleId();
-                                    boolean nextObstacleVisible = false;
-                                    if (nextActionableId != -1) {
-                                        net.runelite.api.Scene scene = client.getScene();
-                                        if (scene != null) {
-                                            net.runelite.api.Tile[][][] tiles = scene.getTiles();
-                                            outer: for (int z = 0; z < tiles.length; z++) {
-                                                for (int x = 0; x < tiles[z].length; x++) {
-                                                    for (int y = 0; y < tiles[z][x].length; y++) {
-                                                        net.runelite.api.Tile tile = tiles[z][x][y];
-                                                        if (tile == null) continue;
-                                                        net.runelite.api.GameObject[] gameObjects = tile.getGameObjects();
-                                                        if (gameObjects != null) {
-                                                            for (net.runelite.api.GameObject obj : gameObjects) {
-                                                                if (obj != null && obj.getId() == nextActionableId && (obj.getClickbox() != null || net.runelite.api.Perspective.getCanvasTilePoly(client, obj.getLocalLocation()) != null)) {
-                                                                    nextObstacleVisible = true;
-                                                                    break outer;
-                                                                }
-                                                            }
-                                                        }
-                                                        net.runelite.api.WallObject wall = tile.getWallObject();
-                                                        if (wall != null && wall.getId() == nextActionableId && (wall.getClickbox() != null || net.runelite.api.Perspective.getCanvasTilePoly(client, wall.getLocalLocation()) != null)) {
-                                                            nextObstacleVisible = true;
-                                                            break outer;
-                                                        }
-                                                        net.runelite.api.DecorativeObject deco = tile.getDecorativeObject();
-                                                        if (deco != null && deco.getId() == nextActionableId && (deco.getClickbox() != null || net.runelite.api.Perspective.getCanvasTilePoly(client, deco.getLocalLocation()) != null)) {
-                                                            nextObstacleVisible = true;
-                                                            break outer;
-                                                        }
-                                                        net.runelite.api.GroundObject ground = tile.getGroundObject();
-                                                        if (ground != null && ground.getId() == nextActionableId && (ground.getClickbox() != null || net.runelite.api.Perspective.getCanvasTilePoly(client, ground.getLocalLocation()) != null)) {
-                                                            nextObstacleVisible = true;
-                                                            break outer;
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                    // Only break if animation changed (or ended) AND next obstacle is visible
-                                    if ((currentAnimation == -1 || currentAnimation != initialAnimation) && nextObstacleVisible) {
-                                        break; // Obstacle cleared and next is visible
-                                    }
-                                    // No fallback timeout: only proceed when the above is true
-                                    try { Thread.sleep(100); } catch (InterruptedException ignored) {}
-                                }
-                            }
                         } catch (Exception e) {
-                            System.err.println("[AgilityModule] Exception in clickGameObject: " + e);
+                            System.err.println("[AgilityModule] Exception in processing obstacle: " + e);
                             e.printStackTrace();
                         }
+                        
+                        // Only advance step after we've confirmed obstacle completion or encountered an error
                         try {
                             finalCourse.advanceStep();
                         } catch (Exception e) {
                             System.err.println("[AgilityModule] Exception in advanceStep: " + e);
                             e.printStackTrace();
                         }
+                        
                         // Randomize wait time between clicks to simulate human behavior
                         int minWait = 1200; // ms (1.2s)
                         int maxWait = 3200; // ms (3.2s)
@@ -200,6 +210,14 @@ public class AgilityModule implements HelperModule, OverlayController.CourseSele
         if (course != null) {
             course.resetCourse();
         }
+    }
+
+    /**
+     * Get the currently active agility course
+     * @return The active AgilityCourse or null if none selected
+     */
+    public AgilityCourse getActiveCourse() {
+        return getCourse(activeCourseName);
     }
 
     public void stop() {

@@ -116,7 +116,9 @@ public class Agent {
                 // Register modules
                 AgilityModule agilityModule = new AgilityModule(serviceRegistry);
                 modules.put("agility", agilityModule);
-                logger.info("Registered AgilityModule");
+                // Register the AgilityModule in the ServiceRegistry by its class type
+                serviceRegistry.register(AgilityModule.class, agilityModule);
+                logger.info("Registered AgilityModule in modules map and ServiceRegistry");
                 OverlayController overlay = new OverlayController(modules);
                 overlay.setCourseSelectionListener(agilityModule); // Wire up course selection listener
                 overlay.show();

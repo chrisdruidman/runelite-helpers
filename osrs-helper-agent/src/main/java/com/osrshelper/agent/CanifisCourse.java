@@ -9,6 +9,7 @@ public class CanifisCourse implements AgilityCourse {
         final int id;
         final String option;
         final String target;
+        
         Obstacle(int id, String option, String target) {
             this.id = id;
             this.option = option;
@@ -17,14 +18,14 @@ public class CanifisCourse implements AgilityCourse {
     }
 
     private static final List<Obstacle> OBSTACLES = Arrays.asList(
-        new Obstacle(14843, "Climb", "Tree"),         // Start Tree
-        new Obstacle(14844, "Jump", "Gap"),           // Gap 1
-        new Obstacle(14845, "Jump", "Gap"),           // Gap 2
-        new Obstacle(14848, "Jump", "Gap"),           // Gap 3
-        new Obstacle(14846, "Jump", "Gap"),           // Gap 4
-        new Obstacle(14894, "Vault", "Pole-vault"),   // Pole-vault
-        new Obstacle(14847, "Jump", "Gap"),           // Gap 5
-        new Obstacle(14897, "Jump-down", "Gap")        // Leap Down
+        new Obstacle(14843, "Climb", "tall tree"),    // Start Tree - Confirmed in RuneLite as TALL_TREE
+        new Obstacle(14844, "Jump", "Gap"),           // Gap 1 - ROOFTOPS_CANIFIS_JUMP
+        new Obstacle(14845, "Jump", "Gap"),           // Gap 2 - ROOFTOPS_CANIFIS_JUMP_2
+        new Obstacle(14848, "Jump", "Gap"),           // Gap 3 - ROOFTOPS_CANIFIS_JUMP_5
+        new Obstacle(14846, "Jump", "Gap"),           // Gap 4 - ROOFTOPS_CANIFIS_JUMP_3
+        new Obstacle(14894, "Vault", "Pole-vault"),   // Pole-vault - ROOFTOPS_CANIFIS_POLEVAULT
+        new Obstacle(14847, "Jump", "Gap"),           // Gap 5 - ROOFTOPS_CANIFIS_JUMP_4
+        new Obstacle(14897, "Jump-down", "Gap")       // Leap Down - ROOFTOPS_CANIFIS_LEAPDOWN
     );
 
     private int currentStep = 0;
@@ -90,7 +91,7 @@ public class CanifisCourse implements AgilityCourse {
         return -1;
     }
 
-    // New: get menu option/target for a given obstacle id (for flexibility)
+    // Get menu option/target for a given obstacle id
     public static Obstacle getObstacleById(int id) {
         for (Obstacle o : OBSTACLES) {
             if (o.id == id) return o;
