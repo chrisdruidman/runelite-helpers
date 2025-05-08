@@ -55,4 +55,9 @@ public class GameStateService implements AgentService {
         // Use HookingService to check if the object with the given ID is present in the scene
         return hookingService.isObjectPresentNow(objectId);
     }
+
+    // Returns the player's current animation ID (delegates to HookingService)
+    public int getCurrentPlayerAnimationId() {
+        return hookingService.getCurrentPlayerAnimationId();
+    }
 }

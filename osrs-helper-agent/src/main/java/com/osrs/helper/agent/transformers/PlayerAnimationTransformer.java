@@ -29,11 +29,13 @@ public class PlayerAnimationTransformer implements ClassFileTransformer {
                         @Override
                         public void visitInsn(int opcode) {
                             if (opcode == Opcodes.RETURN) {
-                                // Inject: HookingService.onPlayerAnimationChanged(animation != -1);
-                                super.visitVarInsn(Opcodes.ALOAD, 0); // 'this'
-                                super.visitFieldInsn(Opcodes.GETFIELD, "client/Player", "animation", "I");
-                                super.visitInsn(Opcodes.ICONST_M1);
+                                // Inject: HookingService.onPlayerAnimationChanged(isAnimating, animationId);
+                                // animationId is method argument at index 1
+                                super.visitVarInsn(Opcodes.ILOAD, 1); // animationId
+                                // isAnimating = animationId != -1
                                 Label notAnimating = new Label();
+                                super.visitVarInsn(Opcodes.ILOAD, 1);
+                                super.visitInsn(Opcodes.ICONST_M1);
                                 super.visitJumpInsn(Opcodes.IF_ICMPEQ, notAnimating);
                                 super.visitInsn(Opcodes.ICONST_1);
                                 Label callHook = new Label();
@@ -41,10 +43,13 @@ public class PlayerAnimationTransformer implements ClassFileTransformer {
                                 super.visitLabel(notAnimating);
                                 super.visitInsn(Opcodes.ICONST_0);
                                 super.visitLabel(callHook);
+                                // Stack: [animationId, isAnimating]
+                                // Swap to [isAnimating, animationId] for (ZI)V
+                                super.visitInsn(Opcodes.SWAP);
                                 super.visitMethodInsn(Opcodes.INVOKESTATIC,
                                     "com/osrs/helper/agent/services/HookingService",
                                     "onPlayerAnimationChanged",
-                                    "(Z)V", false);
+                                    "(ZI)V", false);
                             }
                             super.visitInsn(opcode);
                         }

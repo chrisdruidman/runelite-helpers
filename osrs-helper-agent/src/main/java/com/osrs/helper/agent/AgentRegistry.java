@@ -21,9 +21,9 @@ public class AgentRegistry {
     private final OverlayModuleToggleListener moduleToggleListener = new OverlayModuleToggleListener();
     private final OverlayInjectionService overlayInjectionService = new OverlayInjectionService();
     private final MenuEntryService menuEntryService = new MenuEntryService();
-    private final GameStateService gameStateService = new GameStateService();
-    private final AgilityAutomationService agilityAutomationService = new AgilityAutomationService(menuEntryService, gameStateService);
     private final HookingService hookingService = new HookingService();
+    private final GameStateService gameStateService = new GameStateService(hookingService);
+    private final AgilityAutomationService agilityAutomationService = new AgilityAutomationService(menuEntryService, gameStateService);
 
     public AgentRegistry() {
         // Register core services and modules here

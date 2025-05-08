@@ -19,11 +19,14 @@ public class HookingService implements AgentService {
     // Example: Listeners for object presence changes
     private final List<Consumer<String>> objectPresenceListeners = new ArrayList<>();
 
+    private int currentPlayerAnimationId = -1;
+
     // --- Static hook entry points for ASM-injected code ---
 
     // Called by ASM-injected code when the player's animation state changes
-    public static void onPlayerAnimationChanged(boolean isAnimating) {
+    public static void onPlayerAnimationChanged(boolean isAnimating, int animationId) {
         getInstance().setPlayerAnimating(isAnimating);
+        getInstance().setCurrentPlayerAnimationId(animationId);
     }
 
     // Called by ASM-injected code when the player's position changes
@@ -53,6 +56,14 @@ public class HookingService implements AgentService {
     private void setPlayerAnimating(boolean isAnimating) {
         this.currentPlayerAnimating = isAnimating;
         notifyPlayerAnimationChanged(isAnimating);
+    }
+
+    private void setCurrentPlayerAnimationId(int animationId) {
+        this.currentPlayerAnimationId = animationId;
+    }
+
+    public int getCurrentPlayerAnimationId() {
+        return currentPlayerAnimationId;
     }
 
     private void setPlayerPosition(Object position) {

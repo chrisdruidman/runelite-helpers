@@ -62,8 +62,8 @@ public class OverlayWindow extends JFrame {
 
     private void showModuleConfig(AgentModule module) {
         configPanel.removeAll();
-        // Agility module: show course selection UI and update module state
-        if (module instanceof AgilityModule agilityModule) {
+        if (module instanceof AgilityModule) {
+            AgilityModule agilityModule = (AgilityModule) module;
             JPanel panel = new JPanel();
             panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
             panel.add(new JLabel("Select Rooftop Course:"));
@@ -75,6 +75,22 @@ public class OverlayWindow extends JFrame {
                 agilityModule.setSelectedCourse(selectedCourse);
             });
             panel.add(courseSelector);
+            // --- Agility automation options ---
+            panel.add(new JLabel("Max Laps (0 = infinite):"));
+            JSpinner lapSpinner = new JSpinner(new SpinnerNumberModel(1, 0, 1000, 1));
+            panel.add(lapSpinner);
+            JButton startButton = new JButton("Start Automation");
+            JButton stopButton = new JButton("Stop Automation");
+            startButton.addActionListener(e -> {
+                int maxLaps = (int) lapSpinner.getValue();
+                agilityModule.setMaxLaps(maxLaps == 0 ? -1 : maxLaps);
+                agilityModule.startAutomation();
+            });
+            stopButton.addActionListener(e -> agilityModule.stopAutomation());
+            JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            buttonPanel.add(startButton);
+            buttonPanel.add(stopButton);
+            panel.add(buttonPanel);
             configPanel.add(panel, BorderLayout.CENTER);
         } else {
             // Fallback: no options available

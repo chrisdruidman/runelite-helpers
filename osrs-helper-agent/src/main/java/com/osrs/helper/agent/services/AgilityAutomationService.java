@@ -11,12 +11,18 @@ import java.util.logging.Logger;
  */
 public class AgilityAutomationService implements AgentService {
     private static final Logger logger = Logger.getLogger("AgilityAutomationService");
+    private static final int MAX_RETRIES = 3;
     private boolean running = false;
     private final MenuEntryService menuEntryService;
     private final GameStateService gameStateService;
     private AgilityCourse currentCourse;
     private List<AgilityObstacle> currentObstacles;
     private int currentIndex;
+    private int lapCount = 0;
+    private int maxLaps = 1; // Set to -1 for infinite laps
+    private enum State { IDLE, RUNNING, WAITING, ERROR, PAUSED }
+    private State state = State.IDLE;
+    private int currentRetry = 0;
 
     public AgilityAutomationService(MenuEntryService menuEntryService, GameStateService gameStateService) {
         this.menuEntryService = menuEntryService;
@@ -43,6 +49,9 @@ public class AgilityAutomationService implements AgentService {
         this.currentObstacles = obstacles;
         this.currentIndex = 0;
         this.running = true;
+        this.lapCount = 0;
+        this.state = State.RUNNING;
+        this.currentRetry = 0;
         logger.info("Starting agility automation for course: " + course.getName());
         stepToNextObstacle();
     }
@@ -54,6 +63,7 @@ public class AgilityAutomationService implements AgentService {
             currentCourse = null;
             currentObstacles = null;
             currentIndex = 0;
+            state = State.IDLE;
         }
     }
 
@@ -62,34 +72,106 @@ public class AgilityAutomationService implements AgentService {
     }
 
     private void stepToNextObstacle() {
-        if (!running || currentObstacles == null || currentIndex >= currentObstacles.size()) {
-            logger.info("Agility course complete or stopped.");
+        if (!running || currentObstacles == null) {
+            logger.info("Agility automation stopped.");
+            state = State.IDLE;
             stopAutomation();
             return;
         }
+        if (currentIndex >= currentObstacles.size()) {
+            lapCount++;
+            logger.info("Completed lap " + lapCount + ".");
+            if (maxLaps > 0 && lapCount >= maxLaps) {
+                logger.info("Max laps reached. Stopping automation.");
+                state = State.IDLE;
+                stopAutomation();
+                return;
+            }
+            currentIndex = 0;
+            logger.info("Starting next lap.");
+        }
+        state = State.RUNNING;
+        currentRetry = 0;
         AgilityObstacle obstacle = currentObstacles.get(currentIndex);
         handleObstacle(obstacle);
     }
 
     private void handleObstacle(AgilityObstacle obstacle) {
         logger.info("Handling obstacle: " + obstacle.getName() + " (" + obstacle.getObjectId() + ")");
-        boolean success = menuEntryService.interactWithMenuEntry("Jump", obstacle.getObjectId());
+        state = State.WAITING;
+        // Wait for player to be at/near the obstacle
+        if (!waitForPlayerAtPosition(obstacle.getObstaclePosition(), 3, 3000)) {
+            handleRetryOrError("Player not at required position for obstacle: " + obstacle.getName(), obstacle);
+            return;
+        }
+        boolean success = menuEntryService.interactWithMenuEntry(obstacle.getMenuAction(), obstacle.getObjectId());
         if (success) {
             logger.info("Successfully interacted with obstacle: " + obstacle.getName());
             if (!waitForPlayerToAnimate(3000)) {
-                handleError("Player did not start animating for obstacle: " + obstacle.getName());
+                handleRetryOrError("Player did not start animating for obstacle: " + obstacle.getName(), obstacle);
                 return;
             }
             if (!waitForPlayerToStopAnimating(7000)) {
-                handleError("Player did not finish obstacle: " + obstacle.getName());
+                handleRetryOrError("Player did not finish obstacle: " + obstacle.getName(), obstacle);
+                return;
+            }
+            // REQUIRED: Validate player is at expected position and/or animation
+            if (!validatePlayerAfterObstacle(obstacle)) {
+                handleRetryOrError("Player did not reach expected state after obstacle: " + obstacle.getName(), obstacle);
                 return;
             }
             currentIndex++;
             stepToNextObstacle();
         } else {
-            handleError("Failed to interact with obstacle: " + obstacle.getName());
-            // Do NOT step to next obstacle on failure
+            handleRetryOrError("Failed to interact with obstacle: " + obstacle.getName(), obstacle);
         }
+    }
+
+    private void handleRetryOrError(String message, AgilityObstacle obstacle) {
+        logger.warning(message + " (retry " + (currentRetry + 1) + "/" + MAX_RETRIES + ")");
+        currentRetry++;
+        if (currentRetry < MAX_RETRIES) {
+            logger.info("Retrying obstacle: " + obstacle.getName());
+            handleObstacle(obstacle);
+        } else {
+            logger.severe("Max retries reached for obstacle: " + obstacle.getName() + ". Aborting automation.");
+            state = State.ERROR;
+            stopAutomation();
+        }
+    }
+
+    private boolean waitForPlayerAtPosition(Object requiredPosition, int tolerance, long timeoutMs) {
+        long start = System.currentTimeMillis();
+        while (System.currentTimeMillis() - start < timeoutMs) {
+            if (!running) return false;
+            Object pos = gameStateService.getPlayerPosition();
+            if (pos instanceof com.osrs.helper.agent.helpermodules.agility.WorldPosition) {
+                com.osrs.helper.agent.helpermodules.agility.WorldPosition wp = (com.osrs.helper.agent.helpermodules.agility.WorldPosition) pos;
+                com.osrs.helper.agent.helpermodules.agility.WorldPosition req = (com.osrs.helper.agent.helpermodules.agility.WorldPosition) requiredPosition;
+                if (Math.abs(wp.x - req.x) <= tolerance && Math.abs(wp.y - req.y) <= tolerance && wp.plane == req.plane) {
+                    return true;
+                }
+            }
+            try { Thread.sleep(50); } catch (InterruptedException ignored) {}
+        }
+        return false;
+    }
+
+    private boolean validatePlayerAfterObstacle(AgilityObstacle obstacle) {
+        Object pos = gameStateService.getPlayerPosition();
+        boolean atExpectedPos = false;
+        if (pos instanceof com.osrs.helper.agent.helpermodules.agility.WorldPosition) {
+            com.osrs.helper.agent.helpermodules.agility.WorldPosition wp = (com.osrs.helper.agent.helpermodules.agility.WorldPosition) pos;
+            com.osrs.helper.agent.helpermodules.agility.WorldPosition expected = obstacle.getExpectedPlayerPosition();
+            atExpectedPos = (wp.x == expected.x && wp.y == expected.y && wp.plane == expected.plane);
+        }
+        boolean correctAnim = (obstacle.getExpectedAnimationId() == -1) || (gameStateService.isPlayerAnimating() && obstacle.getExpectedAnimationId() == getCurrentAnimationId());
+        return atExpectedPos && correctAnim;
+    }
+
+    private int getCurrentAnimationId() {
+        // Use GameStateService/HookingService to get the current animation ID
+        return gameStateService.getCurrentPlayerAnimationId();
     }
 
     /**
@@ -117,6 +199,18 @@ public class AgilityAutomationService implements AgentService {
             try { Thread.sleep(50); } catch (InterruptedException ignored) {}
         }
         return false;
+    }
+
+    public void setMaxLaps(int maxLaps) {
+        this.maxLaps = maxLaps;
+    }
+
+    public int getLapCount() {
+        return lapCount;
+    }
+
+    public State getState() {
+        return state;
     }
 
     private void handleError(String message) {

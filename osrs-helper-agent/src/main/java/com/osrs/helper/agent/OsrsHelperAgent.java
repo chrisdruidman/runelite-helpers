@@ -21,9 +21,9 @@ public class OsrsHelperAgent {
         setupLogging();
         logger.info("OsrsHelperAgent started with premain");
         // Register ASM transformers for hooks
-        inst.addTransformer(new PlayerAnimationTransformer(), true);
-        inst.addTransformer(new PlayerPositionTransformer(), true);
-        inst.addTransformer(new ObjectPresenceTransformer(), true);
+        inst.addTransformer(new PlayerAnimationTransformer());
+        inst.addTransformer(new PlayerPositionTransformer());
+        inst.addTransformer(new ObjectPresenceTransformer());
         initializeAgent();
     }
 
@@ -31,9 +31,9 @@ public class OsrsHelperAgent {
         setupLogging();
         logger.info("OsrsHelperAgent started with agentmain");
         // Register ASM transformers for hooks
-        inst.addTransformer(new PlayerAnimationTransformer(), true);
-        inst.addTransformer(new PlayerPositionTransformer(), true);
-        inst.addTransformer(new ObjectPresenceTransformer(), true);
+        inst.addTransformer(new PlayerAnimationTransformer());
+        inst.addTransformer(new PlayerPositionTransformer());
+        inst.addTransformer(new ObjectPresenceTransformer());
         initializeAgent();
     }
 

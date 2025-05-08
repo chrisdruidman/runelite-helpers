@@ -73,4 +73,22 @@ public class AgilityModule implements AgentModule {
     public java.util.List<AgilityObstacle> getCurrentObstacles() {
         return selectedCourse != null ? ((selectedCourse instanceof CanifisCourse) ? ((CanifisCourse) selectedCourse).getObstacles() : null) : null;
     }
+
+    public void setMaxLaps(int maxLaps) {
+        if (automationService != null) {
+            automationService.setMaxLaps(maxLaps);
+        }
+    }
+
+    public void startAutomation() {
+        if (selectedCourse != null && automationService != null) {
+            automationService.startAutomation(selectedCourse, getCurrentObstacles());
+        }
+    }
+
+    public void stopAutomation() {
+        if (automationService != null) {
+            automationService.stopAutomation();
+        }
+    }
 }
