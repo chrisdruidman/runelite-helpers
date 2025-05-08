@@ -2,9 +2,9 @@
 
 We are making a tool to act as a helper for Old School RuneScape for various tasks. We will be targetting the RuneLite client for this purpose, as it uses Java and this allows us more options for deep, unrestricted automation. We will use a Java agent project for injecting automation into the RuneLite client, and a custom launcher to assist with our injection.
 
-The RuneLite source code is found in the 'runelite' folder. YOU WILL keep this in context when thinking about our implementation. YOU MUST REFER TO THIS as it will assist us in each step whilst creating our helper. DO NOT TOUCH THE RUNELITE FOLDER. Keep all of our code code separate from the RuneLite source folder.
+The RuneLite source code is found in the 'osrs-runelite-agent-helper/runelite' folder. YOU MUST REFER TO THIS as it will assist us in each step whilst creating our helper. DO NOT TOUCH THE RUNELITE FOLDER. Keep all of our code code separate from the RuneLite source folder.
 
-We will place the agent code inside the 'osrs-helper-agent' folder. ONLY PLACE AGENT CODE IN THIS FOLDER. The code structure should be modular and allow for extensibility, as there will eventually be multiple tasks that the agent can run.
+We will place the agent code inside the 'osrs-runelite-agent-helper/osrs-helper-agent' folder. ONLY PLACE AGENT CODE IN THIS FOLDER. The code structure should be modular and allow for extensibility, as there will eventually be multiple tasks that the agent can run.
 
 The structure of the agent code should have:
 
@@ -24,7 +24,7 @@ Our agent should use this behaviour:
 -   The agent will output debug and error info to the console and to a log file called 'agent-output'
 -   The log file should be cleared at the start of each run to avoid large file sizes
 
-We will place the launcher code inside the 'osrs-helper-launcher' folder. ONLY PLACE LAUNCHER CODE IN THIS FOLDER. The code structure should be modular and allow for extensibility. The launcher will output debug and error info to the console and to a log file called 'launcher-output'. The log file should be cleared at the start of each run to avoid large file sizes. You will keep the log file in context when available so you have direct access to any debugging or error information.
+We will place the launcher code inside the 'osrs-runelite-agent-helper/osrs-helper-launcher' folder. ONLY PLACE LAUNCHER CODE IN THIS FOLDER. The code structure should be modular and allow for extensibility. The launcher will output debug and error info to the console and to a log file called 'launcher-output'. The log file should be cleared at the start of each run to avoid large file sizes. You will keep the log file in context when available so you have direct access to any debugging or error information.
 
 We will be using Maven to build our projects, as this is the same tool used to build the RuneLite source code. The agent and launcher should be considered separate projects, so they should be able to be built separately from each other.
 
