@@ -105,34 +105,13 @@ public class Agent {
                 serviceRegistry.register(MouseManager.class, (MouseManager) mouseManagerInstance);
                 logger.info("Registered MouseManager");
                 // Create MouseInputService with all dependencies
-                MouseInputService mouseInputService = new MouseInputService(serviceRegistry);
-                serviceRegistry.register(MouseInputService.class, mouseInputService);
-                logger.info("Registered MouseInputService");
+                // MouseInputService mouseInputService = new MouseInputService(serviceRegistry);
+                // serviceRegistry.register(MouseInputService.class, mouseInputService);
+                // logger.info("Registered MouseInputService");
 
-                // === Register MouseInputDebugOverlay with OverlayManager ===
-                try {
-                    Class<?> overlayManagerClass = Class.forName("net.runelite.client.ui.overlay.OverlayManager");
-                    Object overlayManager = null;
-                    // Try to find OverlayManager field in RuneLite instance
-                    for (Field field : runeliteClass.getDeclaredFields()) {
-                        if (field.getType().getName().equals("net.runelite.client.ui.overlay.OverlayManager")) {
-                            field.setAccessible(true);
-                            overlayManager = field.get(runeliteInstance);
-                            break;
-                        }
-                    }
-                    if (overlayManager != null) {
-                        MouseInputDebugOverlay debugOverlay = new MouseInputDebugOverlay(mouseInputService, client);
-                        overlayManagerClass.getMethod("add", Class.forName("net.runelite.client.ui.overlay.Overlay"))
-                            .invoke(overlayManager, debugOverlay);
-                        logger.info("MouseInputDebugOverlay registered with OverlayManager.");
-                    } else {
-                        logger.warning("Could not find OverlayManager to register MouseInputDebugOverlay.");
-                    }
-                } catch (Exception e) {
-                    logger.log(Level.WARNING, "Failed to register MouseInputDebugOverlay with OverlayManager", e);
-                }
-                // === End overlay registration ===
+                // Register MenuActionService for programmatic menu entry interaction
+                serviceRegistry.register(MenuActionService.class, new MenuActionServiceImpl(serviceRegistry));
+                logger.info("Registered MenuActionService");
 
                 // Register modules
                 AgilityModule agilityModule = new AgilityModule(serviceRegistry);

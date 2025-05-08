@@ -45,13 +45,13 @@ public class AgilityModule implements HelperModule, OverlayController.CourseSele
             course = courses.values().iterator().next();
             activeCourseName = course.getName().toLowerCase();
         }
-        MouseInputService mouseInputService = serviceRegistry.get(MouseInputService.class);
+        MenuActionService menuActionService = serviceRegistry.get(MenuActionService.class);
         if (course == null) {
             System.err.println("[AgilityModule] Course is null!");
             return;
         }
-        if (mouseInputService == null) {
-            System.err.println("[AgilityModule] MouseInputService is null!");
+        if (menuActionService == null) {
+            System.err.println("[AgilityModule] MenuActionService is null!");
             return;
         }
         AgilityCourse finalCourse = course;
@@ -67,7 +67,25 @@ public class AgilityModule implements HelperModule, OverlayController.CourseSele
                     }
                     if (actionableId != -1) {
                         try {
-                            mouseInputService.clickGameObject(actionableId);
+                            // Use menu option/target for the actionable obstacle
+                            String option = null;
+                            String target = null;
+                            if (finalCourse instanceof CanifisCourse) {
+                                CanifisCourse.Obstacle obs = CanifisCourse.getObstacleById(actionableId);
+                                if (obs != null) {
+                                    option = obs.option;
+                                    target = obs.target;
+                                }
+                            }
+                            // TODO: Add support for other courses here
+                            if (option != null && target != null) {
+                                boolean success = menuActionService.invokeMenuAction(option, target);
+                                if (!success) {
+                                    System.err.println("[AgilityModule] Failed to invoke menu action for obstacle id: " + actionableId + " (" + option + ", " + target + ")");
+                                }
+                            } else {
+                                System.err.println("[AgilityModule] No menu option/target mapping for obstacle id: " + actionableId);
+                            }
                             // Wait for player animation to change or become idle
                             net.runelite.api.Client client = serviceRegistry.get(net.runelite.api.Client.class);
                             if (client != null && client.getLocalPlayer() != null) {
@@ -171,26 +189,6 @@ public class AgilityModule implements HelperModule, OverlayController.CourseSele
             System.out.println("Course not found: " + name);
         }
         // No run() call needed
-    }
-
-    /**
-     * Allows a course to request a mouse click at the given coordinates.
-     * This keeps input logic at the module level.
-     */
-    @Override
-    public void clickAt(int x, int y) {
-        MouseInputService mouseInputService = serviceRegistry.get(MouseInputService.class);
-        mouseInputService.clickAt(x, y);
-    }
-
-    /**
-     * Allows a course to request a mouse click on a game object by ID.
-     * This keeps input logic at the module level.
-     */
-    @Override
-    public void clickGameObject(int id) {
-        MouseInputService mouseInputService = serviceRegistry.get(MouseInputService.class);
-        mouseInputService.clickGameObject(id);
     }
 
     public String[] getCourseNames() {
