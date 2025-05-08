@@ -12,6 +12,8 @@ import com.osrs.helper.agent.listeners.OverlayModuleToggleListener;
 import com.osrs.helper.agent.helpermodules.agility.AgilityModule;
 import com.osrs.helper.agent.services.AgilityAutomationService;
 import com.osrs.helper.agent.services.MenuEntryService;
+import com.osrs.helper.agent.services.GameStateService;
+import com.osrs.helper.agent.services.HookingService;
 
 public class AgentRegistry {
     private final List<AgentService> services = new ArrayList<>();
@@ -19,7 +21,9 @@ public class AgentRegistry {
     private final OverlayModuleToggleListener moduleToggleListener = new OverlayModuleToggleListener();
     private final OverlayInjectionService overlayInjectionService = new OverlayInjectionService();
     private final MenuEntryService menuEntryService = new MenuEntryService();
-    private final AgilityAutomationService agilityAutomationService = new AgilityAutomationService(menuEntryService);
+    private final GameStateService gameStateService = new GameStateService();
+    private final AgilityAutomationService agilityAutomationService = new AgilityAutomationService(menuEntryService, gameStateService);
+    private final HookingService hookingService = new HookingService();
 
     public AgentRegistry() {
         // Register core services and modules here
@@ -27,6 +31,8 @@ public class AgentRegistry {
         services.add(overlayInjectionService);
         services.add(agilityAutomationService);
         services.add(menuEntryService);
+        services.add(gameStateService);
+        services.add(hookingService);
         modules.add(new DummyModule());
         modules.add(new AgilityModule(agilityAutomationService));
     }
@@ -53,5 +59,13 @@ public class AgentRegistry {
 
     public MenuEntryService getMenuEntryService() {
         return menuEntryService;
+    }
+
+    public GameStateService getGameStateService() {
+        return gameStateService;
+    }
+
+    public HookingService getHookingService() {
+        return hookingService;
     }
 }

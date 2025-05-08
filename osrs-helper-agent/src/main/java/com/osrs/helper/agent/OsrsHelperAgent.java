@@ -8,6 +8,9 @@ import java.util.logging.*;
 import com.osrs.helper.agent.overlay.OverlayWindow;
 import com.osrs.helper.agent.listeners.OverlayModuleToggleListener;
 import com.osrs.helper.agent.services.AgentService;
+import com.osrs.helper.agent.transformers.PlayerAnimationTransformer;
+import com.osrs.helper.agent.transformers.PlayerPositionTransformer;
+import com.osrs.helper.agent.transformers.ObjectPresenceTransformer;
 
 public class OsrsHelperAgent {
     private static final Logger logger = Logger.getLogger("OsrsHelperAgent");
@@ -17,12 +20,20 @@ public class OsrsHelperAgent {
     public static void premain(String agentArgs, Instrumentation inst) {
         setupLogging();
         logger.info("OsrsHelperAgent started with premain");
+        // Register ASM transformers for hooks
+        inst.addTransformer(new PlayerAnimationTransformer(), true);
+        inst.addTransformer(new PlayerPositionTransformer(), true);
+        inst.addTransformer(new ObjectPresenceTransformer(), true);
         initializeAgent();
     }
 
     public static void agentmain(String agentArgs, Instrumentation inst) {
         setupLogging();
         logger.info("OsrsHelperAgent started with agentmain");
+        // Register ASM transformers for hooks
+        inst.addTransformer(new PlayerAnimationTransformer(), true);
+        inst.addTransformer(new PlayerPositionTransformer(), true);
+        inst.addTransformer(new ObjectPresenceTransformer(), true);
         initializeAgent();
     }
 
