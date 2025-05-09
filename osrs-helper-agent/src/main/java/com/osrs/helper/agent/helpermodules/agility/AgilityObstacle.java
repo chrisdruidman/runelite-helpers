@@ -7,14 +7,14 @@ import com.osrs.helper.agent.helpermodules.agility.WorldPosition;
  */
 public class AgilityObstacle {
     private final String name;
-    private final String objectId;
+    private final int objectId;
     private final String menuAction;
     private final WorldPosition obstaclePosition;
     private final WorldPosition expectedPlayerPosition;
     private final int expectedAnimationId;
     // Future extensibility: coordinates, actions, etc.
 
-    public AgilityObstacle(String name, String objectId, String menuAction, WorldPosition obstaclePosition, WorldPosition expectedPlayerPosition, int expectedAnimationId) {
+    public AgilityObstacle(String name, int objectId, String menuAction, WorldPosition obstaclePosition, WorldPosition expectedPlayerPosition, int expectedAnimationId) {
         this.name = name;
         this.objectId = objectId;
         this.menuAction = menuAction;
@@ -27,7 +27,7 @@ public class AgilityObstacle {
         return name;
     }
 
-    public String getObjectId() {
+    public int getObjectId() {
         return objectId;
     }
 

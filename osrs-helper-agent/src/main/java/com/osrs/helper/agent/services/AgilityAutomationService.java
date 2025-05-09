@@ -104,7 +104,7 @@ public class AgilityAutomationService implements AgentService {
             handleRetryOrError("Player not at required position for obstacle: " + obstacle.getName(), obstacle);
             return;
         }
-        boolean success = menuEntryService.interactWithMenuEntry(obstacle.getMenuAction(), obstacle.getObjectId());
+        boolean success = menuEntryService.interactWithMenuEntry(obstacle.getMenuAction(), String.valueOf(obstacle.getObjectId()));
         if (success) {
             logger.info("Successfully interacted with obstacle: " + obstacle.getName());
             if (!waitForPlayerToAnimate(3000)) {
@@ -148,12 +148,18 @@ public class AgilityAutomationService implements AgentService {
             if (pos instanceof com.osrs.helper.agent.helpermodules.agility.WorldPosition) {
                 com.osrs.helper.agent.helpermodules.agility.WorldPosition wp = (com.osrs.helper.agent.helpermodules.agility.WorldPosition) pos;
                 com.osrs.helper.agent.helpermodules.agility.WorldPosition req = (com.osrs.helper.agent.helpermodules.agility.WorldPosition) requiredPosition;
-                if (Math.abs(wp.x - req.x) <= tolerance && Math.abs(wp.y - req.y) <= tolerance && wp.plane == req.plane) {
+                logger.info(String.format("[DEBUG] Player position: x=%d, y=%d, plane=%d | Required: x=%d, y=%d, plane=%d | Tolerance: %d", wp.x, wp.y, wp.plane, req.x, req.y, req.plane, tolerance));
+                boolean withinTolerance = Math.abs(wp.x - req.x) <= tolerance && Math.abs(wp.y - req.y) <= tolerance && wp.plane == req.plane;
+                logger.info("[DEBUG] Position within tolerance: " + withinTolerance);
+                if (withinTolerance) {
                     return true;
                 }
+            } else {
+                logger.warning("[DEBUG] Player position is not a WorldPosition instance: " + (pos == null ? "null" : pos.getClass().getName()));
             }
             try { Thread.sleep(50); } catch (InterruptedException ignored) {}
         }
+        logger.warning("[DEBUG] Timed out waiting for player at required position.");
         return false;
     }
 

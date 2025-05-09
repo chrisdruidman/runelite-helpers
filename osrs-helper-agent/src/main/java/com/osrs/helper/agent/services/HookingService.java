@@ -31,6 +31,7 @@ public class HookingService implements AgentService {
 
     // Called by ASM-injected code when the player's position changes
     public static void onPlayerPositionChanged(Object position) {
+        Logger.getLogger("HookingService").info("[DEBUG] onPlayerPositionChanged called with: " + (position == null ? "null" : position.toString() + " (" + position.getClass().getName() + ")"));
         getInstance().setPlayerPosition(position);
     }
 
@@ -67,8 +68,14 @@ public class HookingService implements AgentService {
     }
 
     private void setPlayerPosition(Object position) {
+        logger.info("[DEBUG] setPlayerPosition called with: " + (position == null ? "null" : position.toString() + " (" + (position == null ? "null" : position.getClass().getName()) + ")"));
         this.currentPlayerPosition = position;
         notifyPlayerPositionChanged(position);
+    }
+
+    public Object getCurrentPlayerPosition() {
+        logger.info("[DEBUG] getCurrentPlayerPosition returning: " + (currentPlayerPosition == null ? "null" : currentPlayerPosition.toString() + " (" + currentPlayerPosition.getClass().getName() + ")"));
+        return currentPlayerPosition;
     }
 
     private void setObjectPresence(String objectId, boolean present) {
@@ -83,10 +90,6 @@ public class HookingService implements AgentService {
     // --- Synchronous state queries for services ---
     public boolean getCurrentPlayerAnimating() {
         return currentPlayerAnimating;
-    }
-
-    public Object getCurrentPlayerPosition() {
-        return currentPlayerPosition;
     }
 
     public boolean isObjectPresentNow(String objectId) {
