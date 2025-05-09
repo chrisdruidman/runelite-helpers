@@ -9,8 +9,11 @@ import org.objectweb.asm.commons.AdviceAdapter;
 import java.io.IOException;
 
 /**
- * Service responsible for injecting the overlay into the RuneLite client using ASM.
- * Ensures the overlay is launched asynchronously and does not block or interrupt the client.
+ * Service for injecting the Java Swing overlay into the RuneLite client.
+ * <b>IMPORTANT:</b> This is the ONLY service that uses injected hooks/ASM. All other agent logic must use the minimal API exposed by patch files only.
+ * Do NOT reference or depend on any code from runelite/ directly. This service is part of the hybrid patch-based approach.
+ *
+ * The ASM injection points must be maintained in patch files and documented in osrs-helper-patches/.
  */
 public class OverlayInjectionService implements AgentService {
     private static final Logger logger = Logger.getLogger("OverlayInjectionService");
@@ -30,6 +33,7 @@ public class OverlayInjectionService implements AgentService {
                 if ("net/runelite/client/RuneLite".equals(className)) {
                     logger.info("RuneLite main class detected. Attempting ASM injection.");
                     try {
+                        // NOTE: All injected logic must be documented in patch files and use only the minimal API.
                         return injectOverlayLaunch(classfileBuffer);
                     } catch (Exception e) {
                         logger.severe("ASM injection failed: " + e.getMessage());
@@ -43,7 +47,8 @@ public class OverlayInjectionService implements AgentService {
 
     /**
      * Uses ASM to inject overlay launch logic after clientUI.setVisible(true) in RuneLite.main().
-     * This is a scaffold; fill in the injection logic as needed.
+     * <b>NOTE:</b> This must be kept in sync with the patch files in osrs-helper-patches/.
+     * Do not reference runelite/ code directly.
      */
     private byte[] injectOverlayLaunch(byte[] classfileBuffer) throws IOException {
         ClassReader cr = new ClassReader(classfileBuffer);

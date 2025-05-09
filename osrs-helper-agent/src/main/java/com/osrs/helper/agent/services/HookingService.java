@@ -5,9 +5,11 @@ import java.util.logging.Logger;
 import java.util.function.Consumer;
 
 /**
- * Service for managing ASM-injected hooks and reflection-based listeners into the RuneLite client.
- * Provides a modular API for subscribing to and querying game state, player events, menu entries, etc.
- * All hook/event logic should be centralized here for maintainability and extensibility.
+ * Service for managing hooks and agent integration.
+ * <b>IMPORTANT:</b> Only the overlay uses injected hooks/ASM. All other interaction with RuneLite must use the minimal API exposed by patch files only.
+ * Do NOT reference or depend on any code from runelite/ directly. This service is part of the hybrid patch-based approach.
+ *
+ * No ASM or runtime injection is used here.
  */
 public class HookingService implements AgentService {
     private static final Logger logger = Logger.getLogger("HookingService");
@@ -20,27 +22,6 @@ public class HookingService implements AgentService {
     private final List<Consumer<String>> objectPresenceListeners = new ArrayList<>();
 
     private int currentPlayerAnimationId = -1;
-
-    // --- Static hook entry points for ASM-injected code ---
-
-    // Called by ASM-injected code when the player's animation state changes
-    public static void onPlayerAnimationChanged(boolean isAnimating, int animationId) {
-        getInstance().setPlayerAnimating(isAnimating);
-        getInstance().setCurrentPlayerAnimationId(animationId);
-    }
-
-    // Called by ASM-injected code when the player's position changes
-    public static void onPlayerPositionChanged(Object position) {
-        Logger.getLogger("HookingService").info("[DEBUG] onPlayerPositionChanged called with: " + (position == null ? "null" : position.toString() + " (" + position.getClass().getName() + ")"));
-        getInstance().setPlayerPosition(position);
-    }
-
-    // Called by ASM-injected code when an object's presence changes
-    public static void onObjectPresenceChanged(String objectId, boolean present) {
-        getInstance().setObjectPresence(objectId, present);
-    }
-
-    // --- Internal state and event dispatch ---
     private static HookingService instance;
     private boolean currentPlayerAnimating = false;
     private Object currentPlayerPosition = null;
@@ -54,12 +35,13 @@ public class HookingService implements AgentService {
         return instance;
     }
 
-    private void setPlayerAnimating(boolean isAnimating) {
+    // State update methods (to be called by minimal API, not ASM)
+    public void setPlayerAnimating(boolean isAnimating) {
         this.currentPlayerAnimating = isAnimating;
         notifyPlayerAnimationChanged(isAnimating);
     }
 
-    private void setCurrentPlayerAnimationId(int animationId) {
+    public void setCurrentPlayerAnimationId(int animationId) {
         this.currentPlayerAnimationId = animationId;
     }
 
@@ -67,7 +49,7 @@ public class HookingService implements AgentService {
         return currentPlayerAnimationId;
     }
 
-    private void setPlayerPosition(Object position) {
+    public void setPlayerPosition(Object position) {
         logger.info("[DEBUG] setPlayerPosition called with: " + (position == null ? "null" : position.toString() + " (" + (position == null ? "null" : position.getClass().getName()) + ")"));
         this.currentPlayerPosition = position;
         notifyPlayerPositionChanged(position);
@@ -78,7 +60,7 @@ public class HookingService implements AgentService {
         return currentPlayerPosition;
     }
 
-    private void setObjectPresence(String objectId, boolean present) {
+    public void setObjectPresence(String objectId, boolean present) {
         if (present) {
             presentObjects.add(objectId);
         } else {
@@ -99,13 +81,13 @@ public class HookingService implements AgentService {
     @Override
     public void initialize() {
         logger.info("HookingService initialized");
-        // TODO: Set up ASM hooks or reflection listeners for RuneLite client events
+        // TODO: Set up listeners for RuneLite client events using only the minimal API exposed by patch files
     }
 
     @Override
     public void shutdown() {
         logger.info("HookingService shutdown");
-        // TODO: Clean up hooks/listeners
+        // TODO: Clean up listeners
     }
 
     // Register a listener for player animation state changes
@@ -144,5 +126,5 @@ public class HookingService implements AgentService {
         }
     }
 
-    // TODO: Add methods for querying current state, registering additional hooks, etc.
+    // TODO: Add methods for querying current state, registering additional listeners, etc. All must use the minimal API only.
 }

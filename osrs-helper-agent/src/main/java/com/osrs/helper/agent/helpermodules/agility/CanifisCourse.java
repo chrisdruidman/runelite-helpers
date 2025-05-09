@@ -4,7 +4,9 @@ import java.util.List;
 import java.util.Arrays;
 
 /**
- * Implementation of the Canifis rooftop agility course.
+ * Canifis agility course definition for automation.
+ * <b>IMPORTANT:</b> Only the overlay uses injected hooks/ASM. All other interaction with RuneLite must use the minimal API exposed by patch files only.
+ * Do NOT reference or depend on any code from runelite/ directly. This class is part of the hybrid patch-based approach.
  */
 public class CanifisCourse implements AgilityCourse {
     // Local object ID constants for Canifis rooftop course obstacles (from RuneLite ObjectID)

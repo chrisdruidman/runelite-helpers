@@ -1,5 +1,11 @@
 package com.osrs.helper.agent.overlay;
 
+/**
+ * Java Swing overlay window for module control.
+ * <b>IMPORTANT:</b> This overlay is the only component that uses injected hooks/ASM. All other agent logic must use the minimal API exposed by patch files only.
+ * Do NOT reference or depend on any code from runelite/ directly. This overlay is part of the hybrid patch-based approach.
+ */
+
 import com.osrs.helper.agent.helpermodules.AgentModule;
 import com.osrs.helper.agent.helpermodules.agility.AgilityModule;
 import com.osrs.helper.agent.listeners.ModuleToggleListener;

@@ -3,8 +3,11 @@ package com.osrs.helper.agent.services;
 import java.util.logging.Logger;
 
 /**
- * Service for providing modular access to RuneLite game state.
- * This will be used by modules/services for player position, animation, object presence, etc.
+ * Service for tracking and interacting with game state via the minimal API.
+ * <b>IMPORTANT:</b> Only the overlay uses injected hooks/ASM. All other interaction with RuneLite must use the minimal API exposed by patch files only.
+ * Do NOT reference or depend on any code from runelite/ directly. This service is part of the hybrid patch-based approach.
+ *
+ * No ASM or runtime injection is used here.
  */
 public class GameStateService implements AgentService {
     private static final Logger logger = Logger.getLogger("GameStateService");
@@ -40,13 +43,13 @@ public class GameStateService implements AgentService {
 
     // Returns the player's current position (to be implemented via HookingService)
     public Object getPlayerPosition() {
-        // Use HookingService to get the player's world position
+        // Use HookingService to get the player's world position via the minimal API only
         return hookingService.getCurrentPlayerPosition();
     }
 
     // Returns true if the player is currently animating (to be implemented via HookingService)
     public boolean isPlayerAnimating() {
-        // Use HookingService to check if the player is currently performing an animation
+        // Use HookingService to check if the player is currently performing an animation via the minimal API only
         return hookingService.getCurrentPlayerAnimating();
     }
 

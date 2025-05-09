@@ -7,6 +7,10 @@ import java.util.Map;
 import java.util.LinkedHashMap;
 
 /**
+ * Agility helper module for course automation.
+ * <b>IMPORTANT:</b> Only the overlay uses injected hooks/ASM. All other interaction with RuneLite must use the minimal API exposed by patch files only.
+ * Do NOT reference or depend on any code from runelite/ directly. This module is part of the hybrid patch-based approach.
+ *
  * Minimal scaffold for the Agility helper module.
  * This module will be extended to provide automation and overlays for the Agility skill.
  */

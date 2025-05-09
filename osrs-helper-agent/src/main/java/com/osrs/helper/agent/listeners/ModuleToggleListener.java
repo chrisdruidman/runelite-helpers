@@ -3,7 +3,9 @@ package com.osrs.helper.agent.listeners;
 import com.osrs.helper.agent.helpermodules.AgentModule;
 
 /**
- * Listener interface for module toggle events from the overlay.
+ * Listener for module toggle events.
+ * <b>IMPORTANT:</b> Only the overlay uses injected hooks/ASM. All other interaction with RuneLite must use the minimal API exposed by patch files only.
+ * Do NOT reference or depend on any code from runelite/ directly. This listener is part of the hybrid patch-based approach.
  */
 public interface ModuleToggleListener {
     /**

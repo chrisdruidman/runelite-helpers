@@ -1,8 +1,9 @@
 package com.osrs.helper.agent.helpermodules;
 
 /**
- * Base interface for all agent modules (e.g., Agility, Combat).
- * Modules should be self-contained and support enable/disable.
+ * Base class for all agent helper modules.
+ * <b>IMPORTANT:</b> Only the overlay uses injected hooks/ASM. All other interaction with RuneLite must use the minimal API exposed by patch files only.
+ * Do NOT reference or depend on any code from runelite/ directly. All modules must comply with the hybrid patch-based approach.
  */
 public interface AgentModule {
     /**

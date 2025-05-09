@@ -1,5 +1,11 @@
 package com.osrs.helper.agent;
 
+/**
+ * Main entry point for the OSRS Helper Agent.
+ * <b>IMPORTANT:</b> Only the overlay uses injected hooks/ASM. All other interaction with RuneLite must use the minimal API exposed by patch files only.
+ * Do NOT reference or depend on any code from runelite/ directly. This agent is part of the hybrid patch-based approach.
+ */
+
 import java.lang.instrument.Instrumentation;
 import java.io.File;
 import java.io.FileWriter;
@@ -8,9 +14,6 @@ import java.util.logging.*;
 import com.osrs.helper.agent.overlay.OverlayWindow;
 import com.osrs.helper.agent.listeners.OverlayModuleToggleListener;
 import com.osrs.helper.agent.services.AgentService;
-import com.osrs.helper.agent.transformers.PlayerAnimationTransformer;
-import com.osrs.helper.agent.transformers.PlayerPositionTransformer;
-import com.osrs.helper.agent.transformers.ObjectPresenceTransformer;
 
 public class OsrsHelperAgent {
     private static final Logger logger = Logger.getLogger("OsrsHelperAgent");
@@ -20,20 +23,14 @@ public class OsrsHelperAgent {
     public static void premain(String agentArgs, Instrumentation inst) {
         setupLogging();
         logger.info("OsrsHelperAgent started with premain");
-        // Register ASM transformers for hooks
-        inst.addTransformer(new PlayerAnimationTransformer());
-        inst.addTransformer(new PlayerPositionTransformer());
-        inst.addTransformer(new ObjectPresenceTransformer());
+        // Only overlay injection uses ASM/injected hooks. No transformers registered here.
         initializeAgent();
     }
 
     public static void agentmain(String agentArgs, Instrumentation inst) {
         setupLogging();
         logger.info("OsrsHelperAgent started with agentmain");
-        // Register ASM transformers for hooks
-        inst.addTransformer(new PlayerAnimationTransformer());
-        inst.addTransformer(new PlayerPositionTransformer());
-        inst.addTransformer(new ObjectPresenceTransformer());
+        // Only overlay injection uses ASM/injected hooks. No transformers registered here.
         initializeAgent();
     }
 

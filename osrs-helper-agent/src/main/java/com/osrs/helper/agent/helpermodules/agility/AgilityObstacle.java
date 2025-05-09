@@ -3,7 +3,9 @@ package com.osrs.helper.agent.helpermodules.agility;
 import com.osrs.helper.agent.helpermodules.agility.WorldPosition;
 
 /**
- * Represents a single obstacle in a rooftop agility course.
+ * Represents an obstacle in an agility course.
+ * <b>IMPORTANT:</b> Only the overlay uses injected hooks/ASM. All other interaction with RuneLite must use the minimal API exposed by patch files only.
+ * Do NOT reference or depend on any code from runelite/ directly. This class is part of the hybrid patch-based approach.
  */
 public class AgilityObstacle {
     private final String name;

@@ -1,7 +1,9 @@
 package com.osrs.helper.agent.helpermodules.agility;
 
 /**
- * Represents a generic rooftop agility course.
+ * Represents an agility course for automation.
+ * <b>IMPORTANT:</b> Only the overlay uses injected hooks/ASM. All other interaction with RuneLite must use the minimal API exposed by patch files only.
+ * Do NOT reference or depend on any code from runelite/ directly. This class is part of the hybrid patch-based approach.
  */
 public interface AgilityCourse {
     /**
