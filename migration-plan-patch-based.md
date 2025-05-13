@@ -24,8 +24,8 @@ This plan details how to evolve from a patch/agent/launcher hybrid approach to a
 
 ### 3. Keep Automation Logic Separate
 
--   Keep all automation, overlays, and helper logic in your own projects (e.g., `osrs-helper-agent`, `osrs-helper-launcher`).
--   Do not add automation logic directly to the RuneLite client—only patch what is necessary for your agent to function.
+-   Keep all automation, overlays, and helper logic in external scripts or modules, managed outside the RuneLite client.
+-   Do not add automation logic directly to the RuneLite client—only patch what is necessary for your external automation to function.
 
 ### 4. Patch Application Workflow
 
@@ -33,12 +33,11 @@ This plan details how to evolve from a patch/agent/launcher hybrid approach to a
     1. Clone or update the official RuneLite repo.
     2. Apply your patches using a script (e.g., `git apply` or `patch`).
     3. Build RuneLite as usual.
-    4. Build your agent and launcher.
 -   Automate this process with a script (e.g., `apply-patches.ps1`).
 
 ### 5. Minimize and Modularize Patches
 
--   Only patch what is absolutely necessary for your agent to work.
+-   Only patch what is absolutely necessary for your automation to work.
 -   For new features (e.g., new skills, overlays), add new patch files rather than modifying existing ones when possible.
 -   Keep each patch focused and well-documented.
 
@@ -59,8 +58,6 @@ This plan details how to evolve from a patch/agent/launcher hybrid approach to a
 
 ```
 osrs-runelite-agent-helper/
-  osrs-helper-agent/
-  osrs-helper-launcher/
   osrs-helper-patches/
     minimal-dummy-api.patch
     canifis-agility-hooks.patch
