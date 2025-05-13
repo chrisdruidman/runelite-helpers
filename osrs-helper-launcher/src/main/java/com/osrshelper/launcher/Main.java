@@ -72,24 +72,37 @@ public class Main {
                 logger.severe("Error searching for runelite-api jar in artifacts dir: " + e.getMessage());
             }
 
-            // === AGENT INJECTION AND CLIENT LAUNCH ===
-            BootstrapInfo.Artifact clientArtifact2 = info.getClientArtifact();
-            if (clientArtifact2 == null) {
-                logger.severe("No RuneLite client JAR found in artifacts. Aborting launch.");
+            // === AGENT INJECTION AND CLIENT LAUNCH (WITH PATCHED CLASSLOADER) ===
+            // Directory containing patched .class files (relative to launcher root)
+            Path patchDir = Path.of("..", "osrs-helper-patches", "classes").normalize();
+            if (!Files.exists(patchDir)) {
+                logger.warning("Patch directory not found: " + patchDir + ". No patched classes will be loaded.");
+            }
+            // Build classpath URLs for all jars in ARTIFACTS_DIR
+            List<URL> urls = new ArrayList<>();
+            try {
+                Files.list(Path.of(ARTIFACTS_DIR))
+                    .filter(p -> p.toString().endsWith(".jar"))
+                    .forEach(p -> {
+                        try {
+                            urls.add(p.toUri().toURL());
+                        } catch (Exception e) {
+                            logger.warning("Failed to add jar to classpath: " + p + ", error: " + e.getMessage());
+                        }
+                    });
+            } catch (IOException e) {
+                logger.severe("Failed to build classpath URLs: " + e.getMessage());
                 return;
             }
-            Path clientJar = Path.of(ARTIFACTS_DIR, clientArtifact2.name);
-            if (!Files.exists(clientJar)) {
-                logger.severe("RuneLite client JAR not found at: " + clientJar);
-                return;
-            }
-            // Locate agent JAR (relative to launcher project root)
-            Path agentJar = Path.of("..", "osrs-helper-agent", "target", "osrs-helper-agent-1.0-SNAPSHOT-shaded.jar").normalize();
-            if (!Files.exists(agentJar)) {
-                logger.severe("Agent JAR not found at: " + agentJar + ". Please build the agent project first.");
-                return;
-            }
-            // Filter problematic JVM args
+            // Create the patched classloader
+            PatchedClassLoader patchedClassLoader = new PatchedClassLoader(
+                urls.toArray(new URL[0]),
+                ClassLoader.getSystemClassLoader(),
+                patchDir,
+                logger
+            );
+            Thread.currentThread().setContextClassLoader(patchedClassLoader);
+            // Build args for RuneLite main
             List<String> filteredJvmArgs = new ArrayList<>();
             for (String arg : info.clientJvmArguments) {
                 if (arg.equals("-Xincgc") ||
@@ -101,37 +114,14 @@ public class Main {
                 }
                 filteredJvmArgs.add(arg);
             }
-            // Build classpath from all JARs in ARTIFACTS_DIR
-            StringBuilder classpath = new StringBuilder();
+            // Launch RuneLite main class using PatchedClassLoader
             try {
-                Files.list(Path.of(ARTIFACTS_DIR))
-                    .filter(p -> p.toString().endsWith(".jar"))
-                    .forEach(p -> {
-                        if (classpath.length() > 0) classpath.append(";");
-                        classpath.append(p.toAbsolutePath());
-                    });
-            } catch (IOException e) {
-                logger.severe("Failed to build classpath: " + e.getMessage());
-                return;
-            }
-            // Build command
-            List<String> cmd = new ArrayList<>();
-            cmd.add("java");
-            cmd.add("-cp");
-            cmd.add(classpath.toString());
-            cmd.add("-javaagent:" + agentJar.toAbsolutePath());
-            cmd.addAll(filteredJvmArgs);
-            cmd.add("net.runelite.client.RuneLite");
-            logger.info("Launching RuneLite with agent injected (using -cp)...");
-            logger.info("Command: " + String.join(" ", cmd));
-            ProcessBuilder pb = new ProcessBuilder(cmd);
-            pb.inheritIO(); // Show output in current console
-            try {
-                Process proc = pb.start();
-                int exitCode = proc.waitFor();
-                logger.info("RuneLite process exited with code: " + exitCode);
+                Class<?> mainClass = patchedClassLoader.loadClass("net.runelite.client.RuneLite");
+                logger.info("Launching RuneLite main class with PatchedClassLoader...");
+                String[] rlArgs = new String[0]; // pass args if needed
+                mainClass.getMethod("main", String[].class).invoke(null, (Object) rlArgs);
             } catch (Exception e) {
-                logger.log(Level.SEVERE, "Failed to launch RuneLite with agent", e);
+                logger.log(Level.SEVERE, "Failed to launch RuneLite with PatchedClassLoader", e);
             }
             // ...future extensibility here...
         } catch (Exception e) {
