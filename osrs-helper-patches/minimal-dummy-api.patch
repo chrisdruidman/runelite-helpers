@@ -1,0 +1,19 @@
+diff --git a/runelite-api/src/main/java/net/runelite/api/DummyApi.java b/runelite-api/src/main/java/net/runelite/api/DummyApi.java
+new file mode 100644
+index 000000000..92d18d7a8
+--- /dev/null
++++ b/runelite-api/src/main/java/net/runelite/api/DummyApi.java
+@@ -0,0 +1,13 @@
++package net.runelite.api;
++
++/**
++ * Dummy API for testing agent-to-client communication via patch-based minimal API.
++ */
++public class DummyApi {
++    /**
++     * Returns a test string to verify agent communication with patched RuneLite.
++     */
++    public static String getTestString() {
++        return "dummy-api-success";
++    }
++}

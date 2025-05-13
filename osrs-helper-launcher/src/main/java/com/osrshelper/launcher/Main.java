@@ -50,6 +50,28 @@ public class Main {
             // Download all artifacts if needed
             downloadArtifacts(info.artifacts);
 
+            // === OVERWRITE DOWNLOADED runelite-api JAR WITH PATCHED JAR ===
+            // Find the runelite-api jar in ARTIFACTS_DIR
+            try {
+                Path patchedApiJar = Path.of("..", "runelite", "runelite-api", "target", "runelite-api-1.11.8-SNAPSHOT.jar").normalize();
+                if (Files.exists(patchedApiJar)) {
+                    Files.list(Path.of(ARTIFACTS_DIR))
+                        .filter(p -> p.getFileName().toString().startsWith("runelite-api-") && p.getFileName().toString().endsWith(".jar"))
+                        .forEach(apiJar -> {
+                            try {
+                                logger.info("Overwriting " + apiJar + " with patched runelite-api jar: " + patchedApiJar);
+                                Files.copy(patchedApiJar, apiJar, StandardCopyOption.REPLACE_EXISTING);
+                            } catch (IOException e) {
+                                logger.severe("Failed to overwrite " + apiJar + " with patched runelite-api jar: " + e.getMessage());
+                            }
+                        });
+                } else {
+                    logger.warning("Patched runelite-api jar not found at: " + patchedApiJar);
+                }
+            } catch (IOException e) {
+                logger.severe("Error searching for runelite-api jar in artifacts dir: " + e.getMessage());
+            }
+
             // === AGENT INJECTION AND CLIENT LAUNCH ===
             BootstrapInfo.Artifact clientArtifact2 = info.getClientArtifact();
             if (clientArtifact2 == null) {

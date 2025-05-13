@@ -1,6 +1,7 @@
 package com.osrs.helper.agent.helpermodules.dummy;
 
 import com.osrs.helper.agent.helpermodules.AgentModule;
+import net.runelite.api.DummyApi;
 
 /**
  * Dummy helper module for demonstration/testing.
@@ -14,6 +15,10 @@ public class DummyModule implements AgentModule {
     public void onEnable() {
         enabled = true;
         System.out.println("DummyModule enabled");
+        // Call DummyApi.getTestString() and log the result
+        String result = DummyApi.getTestString();
+        System.out.println("DummyApi.getTestString() result: " + result);
+        // Optionally, log to a file or agent logger if available
     }
 
     @Override
