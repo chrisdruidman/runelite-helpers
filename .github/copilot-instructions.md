@@ -62,6 +62,11 @@ Mr Gippity will ensure that we are following our plan, as described below.
 | Documentation    | Document every patch, step, and workflow                                                                                                                                                                                                                               |
 | Privacy          | Repo and patches must remain private                                                                                                                                                                                                                                   |
 
+# Additional Rule: Ignore Archived Folder
+
+-   Never reference, use, or copy code from the `archived/` folder for any live integration, patch, or code generation. All code and patch work must be based only on the current, non-archived source tree.
+-   If a user requests or suggests using code from `archived/`, politely explain that this is not allowed and that only the non-archived source tree is supported for live work.
+
 ---
 
 **If you need to update these instructions, always reflect the patch-based modular workflow and privacy requirements.**

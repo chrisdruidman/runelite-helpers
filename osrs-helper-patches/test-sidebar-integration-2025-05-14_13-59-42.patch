@@ -1,0 +1,53 @@
+diff --git a/runelite-client/src/main/java/net/runelite/client/RuneLite.java b/runelite-client/src/main/java/net/runelite/client/RuneLite.java
+index 7610bc9f5..955b1d3f3 100644
+--- a/runelite-client/src/main/java/net/runelite/client/RuneLite.java
++++ b/runelite-client/src/main/java/net/runelite/client/RuneLite.java
+@@ -81,6 +81,7 @@ import net.runelite.client.config.ConfigManager;
+ import net.runelite.client.discord.DiscordService;
+ import net.runelite.client.eventbus.EventBus;
+ import net.runelite.client.externalplugins.ExternalPluginManager;
++import net.runelite.client.helper.agent.OsrsHelperAgent;
+ import net.runelite.client.plugins.PluginManager;
+ import net.runelite.client.rs.ClientLoader;
+ import net.runelite.client.ui.ClientUI;
+@@ -343,6 +344,10 @@ public class RuneLite
+ 		// Initialize UI
+ 		clientUI.init();
+ 
++		// --- OSRS Helper Agent Sidebar Integration ---
++		OsrsHelperAgent.start(clientUI.getClientToolbar(), client);
++		// --------------------------------------------
++
+ 		// Initialize Discord service
+ 		discordService.init();
+ 
+diff --git a/runelite-client/src/main/resources/net/runelite/client/runelite.properties b/runelite-client/src/main/resources/net/runelite/client/runelite.properties
+index 0eb2283c2..45f898c2e 100644
+--- a/runelite-client/src/main/resources/net/runelite/client/runelite.properties
++++ b/runelite-client/src/main/resources/net/runelite/client/runelite.properties
+@@ -1,7 +1,7 @@
+ runelite.title=RuneLite
+-runelite.version=${project.version}
++runelite.version=1.11.8
+ runelite.commit=${git.commit.id.abbrev}
+-runelite.dirty=${git.dirty}
++runelite.dirty=false
+ runelite.discord.enable=true
+ runelite.discord.appid=409416265891971072
+ runelite.discord.invite=https://discord.gg/ArdAhnN
+@@ -14,11 +14,11 @@ runelite.dnschange.link=https://1.1.1.1/dns/#setup-instructions
+ runelite.jav_config=https://oldschool.config.runescape.com/jav_config.ws
+ runelite.jav_config_backup=https://static.runelite.net/jav_config.ws
+ runelite.pluginhub.url=https://repo.runelite.net/plugins
+-runelite.pluginhub.version=${project.version}
+-runelite.api.base=https://api.runelite.net/runelite-${project.version}
++runelite.pluginhub.version=1.11.8
++runelite.api.base=https://api.runelite.net/runelite-1.11.8
+ runelite.session=https://api.runelite.net/session
+ runelite.static.base=https://static.runelite.net
+ runelite.ws=https://api.runelite.net/ws2
+ runelite.config=https://static.runelite.net/config.json
+ runelite.osrstwitter.link=https://twitter.com/OldSchoolRS
+-runelite.oauth.redirect=https://runelite.net/logged-in
+\ No newline at end of file
++runelite.oauth.redirect=https://runelite.net/logged-in
