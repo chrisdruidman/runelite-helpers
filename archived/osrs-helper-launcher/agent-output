@@ -1,0 +1,4 @@
+May 13, 2025 5:32:05 PM com.osrs.helper.agent.OsrsHelperAgent premain
+INFO: OsrsHelperAgent started with premain
+May 13, 2025 5:32:05 PM com.osrs.helper.agent.OsrsHelperAgent initializeAgent
+INFO: All services initialized. Modules are disabled by default. Overlay started.
