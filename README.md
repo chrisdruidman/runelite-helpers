@@ -15,11 +15,12 @@ This project provides a modular, patch-based automation and helper system for Ol
 
 ```
 runelite-helpers/
-  osrs-helper-agent/         # Automation logic (Java)
-  osrs-helper-launcher/      # Custom launcher (if used)
   osrs-helper-patches/       # All patch files and changelogs
   runelite/                  # Working copy of official RuneLite source
   steps-taken/               # Markdown summaries of completed steps
+  build-runelite.ps1         # Script to patch and build RuneLite
+  run-runelite.ps1           # Script to launch the built client
+  write-step-summary.ps1     # Script to document completed steps
   .gitignore                 # Excludes runelite/ and build artifacts
   README.md                  # This file
   LICENSE                    # MIT License
@@ -32,6 +33,12 @@ runelite-helpers/
 3. When updating RuneLite, check out or pull the latest version in the `runelite/` folder, then re-apply your patches.
 4. Document each patch and any manual steps in the patch folder.
 
+## Build, Run, and Document
+
+-   **Build:** Use `build-runelite.ps1` to patch and build the RuneLite client as a release build.
+-   **Run:** Use `run-runelite.ps1` to launch the latest built client.
+-   **Document:** Use `write-step-summary.ps1` to create timestamped step summaries in `steps-taken/`.
+
 ## Modular Registry & Dependency Injection Pattern
 
 -   All modules and services must be registered and constructed via a central `AgentRegistry`.
@@ -43,15 +50,15 @@ runelite-helpers/
 
 ## Project Rules Summary
 
-| Area             | Rule/Instruction                                                                                               |
-| ---------------- | -------------------------------------------------------------------------------------------------------------- |
-| Patch Management | All RuneLite changes as patch files in patch folder                                                            |
-| Automation Logic | All automation logic is kept outside the client and managed via patches and external modules/scripts as needed |
-| Build/Run        | Use scripts to apply patches, build, and launch                                                                |
-| Documentation    | Document every patch, step, and workflow                                                                       |
-| Privacy          | Repo and patches must remain private                                                                           |
-| Modularity       | All code must be modular, extensible, and well-documented                                                      |
-| Registry Pattern | All shared dependencies accessed via AgentRegistry, never by direct injection or UI wiring                     |
+| Area             | Rule/Instruction                                                                                                                                                                                 |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Patch Management | All RuneLite changes as patch files in patch folder                                                                                                                                              |
+| Automation Logic | All automation logic is kept outside the client and managed via patches and external modules/scripts as needed                                                                                   |
+| Build/Run        | Use the provided PowerShell scripts (`build-runelite.ps1`, `run-runelite.ps1`, `write-step-summary.ps1`) for all build, run, and documentation steps. Never run Maven or Java commands manually. |
+| Documentation    | Document every patch, step, and workflow                                                                                                                                                         |
+| Privacy          | Repo and patches must remain private                                                                                                                                                             |
+| Modularity       | All code must be modular, extensible, and well-documented                                                                                                                                        |
+| Registry Pattern | All shared dependencies accessed via AgentRegistry, never by direct injection or UI wiring                                                                                                       |
 
 ## Privacy & Security
 

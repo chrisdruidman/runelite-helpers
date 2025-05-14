@@ -56,13 +56,13 @@ Mr Gippity will ensure that we are following our plan, as described below.
 
 ## Summary Table
 
-| Area             | Rule/Instruction                                                                                               |
-| ---------------- | -------------------------------------------------------------------------------------------------------------- |
-| Patch Management | All RuneLite changes as patch files in patch folder                                                            |
-| Automation Logic | All automation logic is kept outside the client and managed via patches and external modules/scripts as needed |
-| Build/Run        | Use scripts to apply patches, build, and launch                                                                |
-| Documentation    | Document every patch, step, and workflow                                                                       |
-| Privacy          | Repo and patches must remain private                                                                           |
+| Area             | Rule/Instruction                                                                                                                                                                                                                                                       |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Patch Management | All RuneLite changes as patch files in patch folder                                                                                                                                                                                                                    |
+| Automation Logic | All automation logic is kept outside the client and managed via patches and external modules/scripts as needed                                                                                                                                                         |
+| Build/Run        | Use the provided PowerShell scripts (`build-runelite.ps1`, `run-runelite.ps1`, and `write-step-summary.ps1`) to apply patches, build, launch, and document steps. Do not run Maven or Java commands manually; always use these scripts for consistency and automation. |
+| Documentation    | Document every patch, step, and workflow                                                                                                                                                                                                                               |
+| Privacy          | Repo and patches must remain private                                                                                                                                                                                                                                   |
 
 ---
 
