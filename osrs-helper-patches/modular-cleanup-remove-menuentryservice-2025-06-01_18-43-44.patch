@@ -1,0 +1,2322 @@
+diff --git a/runelite-client/src/main/java/net/runelite/client/RuneLite.java b/runelite-client/src/main/java/net/runelite/client/RuneLite.java
+index 7610bc9f5..d2023b792 100644
+--- a/runelite-client/src/main/java/net/runelite/client/RuneLite.java
++++ b/runelite-client/src/main/java/net/runelite/client/RuneLite.java
+@@ -81,6 +81,7 @@ import net.runelite.client.config.ConfigManager;
+ import net.runelite.client.discord.DiscordService;
+ import net.runelite.client.eventbus.EventBus;
+ import net.runelite.client.externalplugins.ExternalPluginManager;
++import net.runelite.client.helper.agent.OsrsHelperAgent;
+ import net.runelite.client.plugins.PluginManager;
+ import net.runelite.client.rs.ClientLoader;
+ import net.runelite.client.ui.ClientUI;
+@@ -98,11 +99,11 @@ import okhttp3.OkHttpClient;
+ import okhttp3.Request;
+ import okhttp3.Response;
+ import org.slf4j.LoggerFactory;
++import net.runelite.client.callback.ClientThread;
+ 
+ @Singleton
+ @Slf4j
+-public class RuneLite
+-{
++public class RuneLite {
+ 	public static final File RUNELITE_DIR = new File(System.getProperty("user.home"), ".runelite");
+ 	public static final File CACHE_DIR = new File(RUNELITE_DIR, "cache");
+ 	public static final File PLUGINS_DIR = new File(RUNELITE_DIR, "plugins");
+@@ -112,7 +113,8 @@ public class RuneLite
+ 	public static final File NOTIFICATIONS_DIR = new File(RuneLite.RUNELITE_DIR, "notifications");
+ 
+ 	private static final int MAX_OKHTTP_CACHE_SIZE = 20 * 1024 * 1024; // 20mb
+-	public static String USER_AGENT = "RuneLite/" + RuneLiteProperties.getVersion() + "-" + RuneLiteProperties.getCommit() + (RuneLiteProperties.isDirty() ? "+" : "");
++	public static String USER_AGENT = "RuneLite/" + RuneLiteProperties.getVersion() + "-"
++			+ RuneLiteProperties.getCommit() + (RuneLiteProperties.isDirty() ? "+" : "");
+ 
+ 	@Getter
+ 	private static Injector injector;
+@@ -165,8 +167,7 @@ public class RuneLite
+ 	@Nullable
+ 	private TelemetryClient telemetryClient;
+ 
+-	public static void main(String[] args) throws Exception
+-	{
++	public static void main(String[] args) throws Exception {
+ 		Locale.setDefault(Locale.ENGLISH);
+ 
+ 		final OptionParser parser = new OptionParser(false);
+@@ -175,39 +176,37 @@ public class RuneLite
+ 		parser.accepts("safe-mode", "Disables external plugins and the GPU plugin");
+ 		parser.accepts("insecure-skip-tls-verification", "Disables TLS verification");
+ 		parser.accepts("jav_config", "jav_config url")
+-			.withRequiredArg()
+-			.defaultsTo(RuneLiteProperties.getJavConfig());
++				.withRequiredArg()
++				.defaultsTo(RuneLiteProperties.getJavConfig());
+ 		parser.accepts("disable-telemetry", "Disable telemetry");
+ 		parser.accepts("profile", "Configuration profile to use").withRequiredArg();
+ 		parser.accepts("noupdate", "Skips the launcher update");
+ 
+-		final ArgumentAcceptingOptionSpec<File> sessionfile = parser.accepts("sessionfile", "Use a specified session file")
+-			.withRequiredArg()
+-			.withValuesConvertedBy(new ConfigFileConverter())
+-			.defaultsTo(DEFAULT_SESSION_FILE);
++		final ArgumentAcceptingOptionSpec<File> sessionfile = parser
++				.accepts("sessionfile", "Use a specified session file")
++				.withRequiredArg()
++				.withValuesConvertedBy(new ConfigFileConverter())
++				.defaultsTo(DEFAULT_SESSION_FILE);
+ 
+-		final OptionSpec<Void> insecureWriteCredentials = parser.accepts("insecure-write-credentials", "Dump authentication tokens from the Jagex Launcher to a text file to be used for development");
++		final OptionSpec<Void> insecureWriteCredentials = parser.accepts("insecure-write-credentials",
++				"Dump authentication tokens from the Jagex Launcher to a text file to be used for development");
+ 
+ 		parser.accepts("help", "Show this text").forHelp();
+ 		OptionSet options = parser.parse(args);
+ 
+-		if (options.has("help"))
+-		{
++		if (options.has("help")) {
+ 			parser.printHelpOn(System.out);
+ 			System.exit(0);
+ 		}
+ 
+-		if (options.has("debug"))
+-		{
++		if (options.has("debug")) {
+ 			final Logger logger = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+ 			logger.setLevel(Level.DEBUG);
+ 		}
+ 
+-		Thread.setDefaultUncaughtExceptionHandler((thread, throwable) ->
+-		{
++		Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
+ 			log.error("Uncaught exception:", throwable);
+-			if (throwable instanceof AbstractMethodError)
+-			{
++			if (throwable instanceof AbstractMethodError) {
+ 				log.error("Classes are out of date; Build with maven again.");
+ 			}
+ 		});
+@@ -218,27 +217,25 @@ public class RuneLite
+ 		SplashScreen.init();
+ 		SplashScreen.stage(0, "Preparing RuneScape", "");
+ 
+-		try
+-		{
++		try {
+ 			final RuntimeConfigLoader runtimeConfigLoader = new RuntimeConfigLoader(okHttpClient);
+-			final ClientLoader clientLoader = new ClientLoader(okHttpClient, runtimeConfigLoader, (String) options.valueOf("jav_config"));
++			final ClientLoader clientLoader = new ClientLoader(okHttpClient, runtimeConfigLoader,
++					(String) options.valueOf("jav_config"));
+ 
+-			new Thread(() ->
+-			{
++			new Thread(() -> {
+ 				clientLoader.get();
+ 				ClassPreloader.preload();
+ 			}, "Preloader").start();
+ 
+-			final boolean developerMode = options.has("developer-mode") && RuneLiteProperties.getLauncherVersion() == null;
++			final boolean developerMode = options.has("developer-mode")
++					&& RuneLiteProperties.getLauncherVersion() == null;
+ 
+-			if (developerMode)
+-			{
++			if (developerMode) {
+ 				boolean assertions = false;
+ 				assert assertions = true;
+-				if (!assertions)
+-				{
+-					SwingUtilities.invokeLater(() ->
+-						new FatalErrorDialog("Developers should enable assertions; Add `-ea` to your JVM arguments`")
++				if (!assertions) {
++					SwingUtilities.invokeLater(() -> new FatalErrorDialog(
++							"Developers should enable assertions; Add `-ea` to your JVM arguments`")
+ 							.addHelpButtons()
+ 							.addBuildingGuide()
+ 							.open());
+@@ -247,8 +244,9 @@ public class RuneLite
+ 			}
+ 
+ 			log.info("RuneLite {} (launcher version {}) starting up, args: {}",
+-				RuneLiteProperties.getVersion(), MoreObjects.firstNonNull(RuneLiteProperties.getLauncherVersion(), "unknown"),
+-				args.length == 0 ? "none" : String.join(" ", args));
++					RuneLiteProperties.getVersion(),
++					MoreObjects.firstNonNull(RuneLiteProperties.getLauncherVersion(), "unknown"),
++					args.length == 0 ? "none" : String.join(" ", args));
+ 
+ 			final RuntimeMXBean runtime = ManagementFactory.getRuntimeMXBean();
+ 			// This includes arguments from _JAVA_OPTIONS, which are parsed after command line flags and applied to
+@@ -257,40 +255,34 @@ public class RuneLite
+ 
+ 			final long start = System.currentTimeMillis();
+ 			injector = Guice.createInjector(new RuneLiteModule(
+-				okHttpClient,
+-				clientLoader,
+-				runtimeConfigLoader,
+-				developerMode,
+-				options.has("safe-mode"),
+-				options.has("disable-telemetry"),
+-				options.valueOf(sessionfile),
+-				(String) options.valueOf("profile"),
+-				options.has(insecureWriteCredentials),
+-				options.has("noupdate")
+-			));
++					okHttpClient,
++					clientLoader,
++					runtimeConfigLoader,
++					developerMode,
++					options.has("safe-mode"),
++					options.has("disable-telemetry"),
++					options.valueOf(sessionfile),
++					(String) options.valueOf("profile"),
++					options.has(insecureWriteCredentials),
++					options.has("noupdate")));
+ 
+ 			injector.getInstance(RuneLite.class).start();
+ 
+ 			final long end = System.currentTimeMillis();
+ 			final long uptime = runtime.getUptime();
+ 			log.info("Client initialization took {}ms. Uptime: {}ms", end - start, uptime);
+-		}
+-		catch (Exception e)
+-		{
++		} catch (Exception e) {
+ 			log.error("Failure during startup", e);
+-			SwingUtilities.invokeLater(() ->
+-				new FatalErrorDialog("RuneLite has encountered an unexpected error during startup.")
+-					.addHelpButtons()
+-					.open());
+-		}
+-		finally
+-		{
++			SwingUtilities.invokeLater(
++					() -> new FatalErrorDialog("RuneLite has encountered an unexpected error during startup.")
++							.addHelpButtons()
++							.open());
++		} finally {
+ 			SplashScreen.stop();
+ 		}
+ 	}
+ 
+-	public void start() throws Exception
+-	{
++	public void start() throws Exception {
+ 		// Inject members into client
+ 		injector.injectMembers(client);
+ 
+@@ -343,6 +335,13 @@ public class RuneLite
+ 		// Initialize UI
+ 		clientUI.init();
+ 
++		// --- OSRS Helper Agent Sidebar Integration ---
++		ClientThread clientThread = injector.getInstance(ClientThread.class);
++		net.runelite.client.input.MouseManager mouseManager = injector.getInstance(net.runelite.client.input.MouseManager.class);
++		net.runelite.client.input.KeyManager keyManager = injector.getInstance(net.runelite.client.input.KeyManager.class);
++		OsrsHelperAgent.start(client, clientUI.getClientToolbar(), clientThread, eventBus, overlayManager, mouseManager, keyManager);
++		// --------------------------------------------
++
+ 		// Initialize Discord service
+ 		discordService.init();
+ 
+@@ -366,8 +365,7 @@ public class RuneLite
+ 
+ 		clientUI.show();
+ 
+-		if (telemetryClient != null)
+-		{
++		if (telemetryClient != null) {
+ 			telemetryClient.submitTelemetry();
+ 			telemetryClient.submitVmErrors(LOGS_DIR);
+ 		}
+@@ -377,31 +375,24 @@ public class RuneLite
+ 	}
+ 
+ 	@VisibleForTesting
+-	public static void setInjector(Injector injector)
+-	{
++	public static void setInjector(Injector injector) {
+ 		RuneLite.injector = injector;
+ 	}
+ 
+-	private static class ConfigFileConverter implements ValueConverter<File>
+-	{
++	private static class ConfigFileConverter implements ValueConverter<File> {
+ 		@Override
+-		public File convert(String fileName)
+-		{
++		public File convert(String fileName) {
+ 			final File file;
+ 
+ 			if (Paths.get(fileName).isAbsolute()
+-				|| fileName.startsWith("./")
+-				|| fileName.startsWith(".\\"))
+-			{
++					|| fileName.startsWith("./")
++					|| fileName.startsWith(".\\")) {
+ 				file = new File(fileName);
+-			}
+-			else
+-			{
++			} else {
+ 				file = new File(RuneLite.RUNELITE_DIR, fileName);
+ 			}
+ 
+-			if (file.exists() && (!file.isFile() || !file.canWrite()))
+-			{
++			if (file.exists() && (!file.isFile() || !file.canWrite())) {
+ 				throw new ValueConversionException(String.format("File %s is not accessible", file.getAbsolutePath()));
+ 			}
+ 
+@@ -409,192 +400,150 @@ public class RuneLite
+ 		}
+ 
+ 		@Override
+-		public Class<? extends File> valueType()
+-		{
++		public Class<? extends File> valueType() {
+ 			return File.class;
+ 		}
+ 
+ 		@Override
+-		public String valuePattern()
+-		{
++		public String valuePattern() {
+ 			return null;
+ 		}
+ 	}
+ 
+ 	@VisibleForTesting
+-	static OkHttpClient buildHttpClient(boolean insecureSkipTlsVerification)
+-	{
++	static OkHttpClient buildHttpClient(boolean insecureSkipTlsVerification) {
+ 		OkHttpClient.Builder builder = new OkHttpClient.Builder()
+-			.pingInterval(30, TimeUnit.SECONDS)
+-			.addInterceptor(chain ->
+-			{
+-				Request request = chain.request();
+-				if (request.header("User-Agent") != null)
+-				{
+-					return chain.proceed(request);
+-				}
++				.pingInterval(30, TimeUnit.SECONDS)
++				.addInterceptor(chain -> {
++					Request request = chain.request();
++					if (request.header("User-Agent") != null) {
++						return chain.proceed(request);
++					}
+ 
+-				Request userAgentRequest = request
+-					.newBuilder()
+-					.header("User-Agent", USER_AGENT)
+-					.build();
+-				return chain.proceed(userAgentRequest);
+-			})
+-			// Setup cache
+-			.cache(new Cache(new File(CACHE_DIR, "okhttp"), MAX_OKHTTP_CACHE_SIZE))
+-			.addNetworkInterceptor(chain ->
+-			{
+-				// This has to be a network interceptor so it gets hit before the cache tries to store stuff
+-				Response res = chain.proceed(chain.request());
+-				if (res.code() >= 400 && "GET".equals(res.request().method()))
+-				{
+-					// if the request 404'd we don't want to cache it because its probably temporary
+-					res = res.newBuilder()
+-						.header("Cache-Control", "no-store")
+-						.build();
+-				}
+-				return res;
+-			});
++					Request userAgentRequest = request
++							.newBuilder()
++							.header("User-Agent", USER_AGENT)
++							.build();
++					return chain.proceed(userAgentRequest);
++				})
++				// Setup cache
++				.cache(new Cache(new File(CACHE_DIR, "okhttp"), MAX_OKHTTP_CACHE_SIZE))
++				.addNetworkInterceptor(chain -> {
++					// This has to be a network interceptor so it gets hit before the cache tries to store stuff
++					Response res = chain.proceed(chain.request());
++					if (res.code() >= 400 && "GET".equals(res.request().method())) {
++						// if the request 404'd we don't want to cache it because its probably temporary
++						res = res.newBuilder()
++								.header("Cache-Control", "no-store")
++								.build();
++					}
++					return res;
++				});
+ 
+-		try
+-		{
+-			if (insecureSkipTlsVerification || RuneLiteProperties.isInsecureSkipTlsVerification())
+-			{
++		try {
++			if (insecureSkipTlsVerification || RuneLiteProperties.isInsecureSkipTlsVerification()) {
+ 				setupInsecureTrustManager(builder);
+-			}
+-			else
+-			{
++			} else {
+ 				setupTrustManager(builder);
+ 			}
+-		}
+-		catch (KeyStoreException | KeyManagementException | NoSuchAlgorithmException e)
+-		{
++		} catch (KeyStoreException | KeyManagementException | NoSuchAlgorithmException e) {
+ 			log.warn("error setting up trust manager", e);
+ 		}
+ 
+ 		return builder.build();
+ 	}
+ 
+-	private static void copyJagexCache()
+-	{
++	private static void copyJagexCache() {
+ 		Path from = Paths.get(System.getProperty("user.home"), "jagexcache");
+ 		Path to = Paths.get(System.getProperty("user.home"), ".runelite", "jagexcache");
+-		if (Files.exists(to) || !Files.exists(from))
+-		{
++		if (Files.exists(to) || !Files.exists(from)) {
+ 			return;
+ 		}
+ 
+ 		log.info("Copying jagexcache from {} to {}", from, to);
+ 
+ 		// Recursively copy path https://stackoverflow.com/a/50418060
+-		try (Stream<Path> stream = Files.walk(from))
+-		{
+-			stream.forEach(source ->
+-			{
+-				try
+-				{
++		try (Stream<Path> stream = Files.walk(from)) {
++			stream.forEach(source -> {
++				try {
+ 					Files.copy(source, to.resolve(from.relativize(source)), COPY_ATTRIBUTES);
+-				}
+-				catch (IOException e)
+-				{
++				} catch (IOException e) {
+ 					throw new RuntimeException(e);
+ 				}
+ 			});
+-		}
+-		catch (Exception e)
+-		{
++		} catch (Exception e) {
+ 			log.warn("unable to copy jagexcache", e);
+ 		}
+ 	}
+ 
+-	private void setupSystemProps()
+-	{
+-		if (runtimeConfig == null || runtimeConfig.getSysProps() == null)
+-		{
++	private void setupSystemProps() {
++		if (runtimeConfig == null || runtimeConfig.getSysProps() == null) {
+ 			return;
+ 		}
+ 
+-		for (Map.Entry<String, String> entry : runtimeConfig.getSysProps().entrySet())
+-		{
++		for (Map.Entry<String, String> entry : runtimeConfig.getSysProps().entrySet()) {
+ 			String key = entry.getKey(), value = entry.getValue();
+ 			log.debug("Setting property {}={}", key, value);
+ 			System.setProperty(key, value);
+ 		}
+ 	}
+ 
+-	private void setupCompilerControl()
+-	{
+-		try
+-		{
++	private void setupCompilerControl() {
++		try {
+ 			var file = Files.createTempFile("rl_compilercontrol", "");
+-			try
+-			{
+-				if (runtimeConfig != null && runtimeConfig.getCompilerControl() != null)
+-				{
++			try {
++				if (runtimeConfig != null && runtimeConfig.getCompilerControl() != null) {
+ 					var json = gson.toJson(runtimeConfig.getCompilerControl());
+ 					Files.writeString(file, json, StandardCharsets.UTF_8);
+-				}
+-				else
+-				{
+-					try (var in = RuneLite.class.getResourceAsStream("/compilercontrol.json"))
+-					{
++				} else {
++					try (var in = RuneLite.class.getResourceAsStream("/compilercontrol.json")) {
+ 						Files.copy(in, file, StandardCopyOption.REPLACE_EXISTING);
+ 					}
+ 				}
+ 
+ 				ManagementFactory.getPlatformMBeanServer().invoke(
+-					new ObjectName("com.sun.management:type=DiagnosticCommand"),
+-					"compilerDirectivesAdd",
+-					new Object[]{new String[]{file.toFile().getAbsolutePath()}},
+-					new String[]{String[].class.getName()});
+-			}
+-			finally
+-			{
++						new ObjectName("com.sun.management:type=DiagnosticCommand"),
++						"compilerDirectivesAdd",
++						new Object[] { new String[] { file.toFile().getAbsolutePath() } },
++						new String[] { String[].class.getName() });
++			} finally {
+ 				Files.delete(file);
+ 			}
+-		}
+-		catch (Exception e)
+-		{
++		} catch (Exception e) {
+ 			log.info("Failed to set compiler control", e);
+ 		}
+ 	}
+ 
+ 	// region trust manager
+-	private static TrustManager[] loadTrustManagers(String trustStoreType) throws KeyStoreException, NoSuchAlgorithmException
+-	{
++	private static TrustManager[] loadTrustManagers(String trustStoreType)
++			throws KeyStoreException, NoSuchAlgorithmException {
+ 		// javax.net.ssl.trustStoreType controls which keystore implementation the TrustStoreManager uses
+ 		String old;
+-		if (trustStoreType != null)
+-		{
++		if (trustStoreType != null) {
+ 			old = System.setProperty("javax.net.ssl.trustStoreType", trustStoreType);
+-		}
+-		else
+-		{
++		} else {
+ 			old = System.clearProperty("javax.net.ssl.trustStoreType");
+ 		}
+ 
+-		TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
++		TrustManagerFactory trustManagerFactory = TrustManagerFactory
++				.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+ 		trustManagerFactory.init((KeyStore) null);
+ 
+ 		TrustManager[] trustManagers = trustManagerFactory.getTrustManagers();
+ 
+ 		// restore old value
+-		if (old == null)
+-		{
++		if (old == null) {
+ 			System.clearProperty("javax.net.ssl.trustStoreType");
+-		}
+-		else
+-		{
++		} else {
+ 			System.setProperty("javax.net.ssl.trustStoreType", old);
+ 		}
+ 
+ 		return trustManagers;
+ 	}
+ 
+-	private static void setupTrustManager(OkHttpClient.Builder okHttpClientBuilder) throws KeyStoreException, NoSuchAlgorithmException, KeyManagementException
+-	{
+-		if (OSType.getOSType() != OSType.Windows)
+-		{
++	private static void setupTrustManager(OkHttpClient.Builder okHttpClientBuilder)
++			throws KeyStoreException, NoSuchAlgorithmException, KeyManagementException {
++		if (OSType.getOSType() != OSType.Windows) {
+ 			return;
+ 		}
+ 
+@@ -610,31 +559,23 @@ public class RuneLite
+ 
+ 		// Even though SSLContext.init() accepts TrustManager[], Sun's SSLContextImpl only picks the first
+ 		// X509TrustManager and uses that.
+-		X509TrustManager combiningTrustManager = new X509TrustManager()
+-		{
++		X509TrustManager combiningTrustManager = new X509TrustManager() {
+ 			@Override
+-			public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException
+-			{
++			public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+ 				CertificateException exception = null;
+-				for (TrustManager trustManager : trustManagers)
+-				{
+-					if (trustManager instanceof X509TrustManager)
+-					{
+-						try
+-						{
++				for (TrustManager trustManager : trustManagers) {
++					if (trustManager instanceof X509TrustManager) {
++						try {
+ 							((X509TrustManager) trustManager).checkClientTrusted(chain, authType);
+ 							// accept if any of the trust managers accept the certificate
+ 							return;
+-						}
+-						catch (CertificateException ex)
+-						{
++						} catch (CertificateException ex) {
+ 							exception = ex;
+ 						}
+ 					}
+ 				}
+ 
+-				if (exception != null)
+-				{
++				if (exception != null) {
+ 					throw exception;
+ 				}
+ 
+@@ -642,28 +583,21 @@ public class RuneLite
+ 			}
+ 
+ 			@Override
+-			public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException
+-			{
++			public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+ 				CertificateException exception = null;
+-				for (TrustManager trustManager : trustManagers)
+-				{
+-					if (trustManager instanceof X509TrustManager)
+-					{
+-						try
+-						{
++				for (TrustManager trustManager : trustManagers) {
++					if (trustManager instanceof X509TrustManager) {
++						try {
+ 							((X509TrustManager) trustManager).checkServerTrusted(chain, authType);
+ 							// accept if any of the trust managers accept the certificate
+ 							return;
+-						}
+-						catch (CertificateException ex)
+-						{
++						} catch (CertificateException ex) {
+ 							exception = ex;
+ 						}
+ 					}
+ 				}
+ 
+-				if (exception != null)
+-				{
++				if (exception != null) {
+ 					throw exception;
+ 				}
+ 
+@@ -671,13 +605,10 @@ public class RuneLite
+ 			}
+ 
+ 			@Override
+-			public X509Certificate[] getAcceptedIssuers()
+-			{
++			public X509Certificate[] getAcceptedIssuers() {
+ 				List<X509Certificate> certificates = new ArrayList<>();
+-				for (TrustManager trustManager : trustManagers)
+-				{
+-					if (trustManager instanceof X509TrustManager)
+-					{
++				for (TrustManager trustManager : trustManagers) {
++					if (trustManager instanceof X509TrustManager) {
+ 						certificates.addAll(Arrays.asList(((X509TrustManager) trustManager).getAcceptedIssuers()));
+ 					}
+ 				}
+@@ -686,34 +617,30 @@ public class RuneLite
+ 		};
+ 
+ 		SSLContext sc = SSLContext.getInstance("TLS");
+-		sc.init(null, new TrustManager[]{combiningTrustManager}, new SecureRandom());
++		sc.init(null, new TrustManager[] { combiningTrustManager }, new SecureRandom());
+ 		okHttpClientBuilder.sslSocketFactory(sc.getSocketFactory(), combiningTrustManager);
+ 	}
+ 
+-	private static void setupInsecureTrustManager(OkHttpClient.Builder okHttpClientBuilder) throws NoSuchAlgorithmException, KeyManagementException
+-	{
++	private static void setupInsecureTrustManager(OkHttpClient.Builder okHttpClientBuilder)
++			throws NoSuchAlgorithmException, KeyManagementException {
+ 		// the insecure trust manager trusts everything
+-		X509TrustManager trustManager = new X509TrustManager()
+-		{
++		X509TrustManager trustManager = new X509TrustManager() {
+ 			@Override
+-			public void checkClientTrusted(X509Certificate[] chain, String authType)
+-			{
++			public void checkClientTrusted(X509Certificate[] chain, String authType) {
+ 			}
+ 
+ 			@Override
+-			public void checkServerTrusted(X509Certificate[] chain, String authType)
+-			{
++			public void checkServerTrusted(X509Certificate[] chain, String authType) {
+ 			}
+ 
+ 			@Override
+-			public X509Certificate[] getAcceptedIssuers()
+-			{
++			public X509Certificate[] getAcceptedIssuers() {
+ 				return new X509Certificate[0];
+ 			}
+ 		};
+ 
+ 		SSLContext sc = SSLContext.getInstance("TLS");
+-		sc.init(null, new TrustManager[]{trustManager}, new SecureRandom());
++		sc.init(null, new TrustManager[] { trustManager }, new SecureRandom());
+ 		okHttpClientBuilder.sslSocketFactory(sc.getSocketFactory(), trustManager);
+ 	}
+ 	// endregion
+diff --git a/runelite-client/src/main/java/net/runelite/client/callback/Hooks.java b/runelite-client/src/main/java/net/runelite/client/callback/Hooks.java
+index 7e997d210..16537310c 100644
+--- a/runelite-client/src/main/java/net/runelite/client/callback/Hooks.java
++++ b/runelite-client/src/main/java/net/runelite/client/callback/Hooks.java
+@@ -222,6 +222,9 @@ public class Hooks implements Callbacks
+ 
+ 			eventBus.post(GAME_TICK);
+ 
++			// Minimal API: notify agent modules of game tick
++			net.runelite.client.helper.agent.services.HookingService.getInstance().fireGameTick();
++			
+ 			int tick = client.getTickCount();
+ 			client.setTickCount(tick + 1);
+ 		}
+diff --git a/runelite-client/src/main/java/net/runelite/client/ui/ClientToolbar.java b/runelite-client/src/main/java/net/runelite/client/ui/ClientToolbar.java
+index 9ca1ab238..315715f2e 100644
+--- a/runelite-client/src/main/java/net/runelite/client/ui/ClientToolbar.java
++++ b/runelite-client/src/main/java/net/runelite/client/ui/ClientToolbar.java
+@@ -37,7 +37,8 @@ public class ClientToolbar
+ 	private final ClientUI clientUI;
+ 
+ 	@Inject
+-	private ClientToolbar(final ClientUI clientUI)
++	// Make constructor public for instantiation in ClientUI
++	public ClientToolbar(final ClientUI clientUI)
+ 	{
+ 		this.clientUI = clientUI;
+ 	}
+diff --git a/runelite-client/src/main/java/net/runelite/client/ui/ClientUI.java b/runelite-client/src/main/java/net/runelite/client/ui/ClientUI.java
+index 50b3cfee3..a0ee4cf02 100644
+--- a/runelite-client/src/main/java/net/runelite/client/ui/ClientUI.java
++++ b/runelite-client/src/main/java/net/runelite/client/ui/ClientUI.java
+@@ -184,6 +184,7 @@ public class ClientUI
+ 	private int recommendedMemoryLimit = 512;
+ 
+ 	private List<KeyListener> keyListeners;
++	private ClientToolbar clientToolbar;
+ 
+ 	@RequiredArgsConstructor
+ 	private static class HistoryEntry
+@@ -538,6 +539,9 @@ public class ClientUI
+ 			withTitleBar = config.enableCustomChrome();
+ 			toolbarPanel = new ClientToolbarPanel(!withTitleBar);
+ 
++			// Initialize clientToolbar after toolbarPanel is created
++			clientToolbar = new ClientToolbar(this);
++
+ 			sidebarOpenIcon = ImageUtil.loadImageResource(ClientUI.class, withTitleBar ? "open.png" : "open_rs.png");
+ 			sidebarCloseIcon = ImageUtil.flipImage(sidebarOpenIcon, true, false);
+ 
+@@ -1410,6 +1414,10 @@ public class ClientUI
+ 		return trayIcon;
+ 	}
+ 
++	public ClientToolbar getClientToolbar() {
++		return clientToolbar;
++	}
++
+ 	private class Layout implements LayoutManager2
+ 	{
+ 		private int prevState;
+diff --git a/runelite-client/src/main/java/net/runelite/client/util/GameEventManager.java b/runelite-client/src/main/java/net/runelite/client/util/GameEventManager.java
+index 5246b6db0..09d57c078 100644
+--- a/runelite-client/src/main/java/net/runelite/client/util/GameEventManager.java
++++ b/runelite-client/src/main/java/net/runelite/client/util/GameEventManager.java
+@@ -190,11 +190,17 @@ public class GameEventManager
+ 					while (current instanceof TileItem)
+ 					{
+ 						final TileItem item = (TileItem) current;
+-
+ 						current = current.getNext();
+-
+ 						final ItemSpawned itemSpawned = new ItemSpawned(tile, item);
+ 						eventBus.post(itemSpawned);
++						// --- AGENT PATCH: Notify agent of ground item spawn ---
++						try {
++							net.runelite.client.helper.agent.AgentRegistry.setGroundItemPresence(item.getId(), true);
++							System.out.println("[AgentRegistry] setGroundItemPresence(" + item.getId() + ", true)");
++						} catch (Throwable t) {
++							// Ignore if agent not present
++						}
++						// --- END PATCH ---
+ 					}
+ 				}
+ 			});
+diff --git a/runelite-client/src/main/resources/net/runelite/client/runelite.properties b/runelite-client/src/main/resources/net/runelite/client/runelite.properties
+index 0eb2283c2..45f898c2e 100644
+--- a/runelite-client/src/main/resources/net/runelite/client/runelite.properties
++++ b/runelite-client/src/main/resources/net/runelite/client/runelite.properties
+@@ -1,7 +1,7 @@
+ runelite.title=RuneLite
+-runelite.version=${project.version}
++runelite.version=1.11.8
+ runelite.commit=${git.commit.id.abbrev}
+-runelite.dirty=${git.dirty}
++runelite.dirty=false
+ runelite.discord.enable=true
+ runelite.discord.appid=409416265891971072
+ runelite.discord.invite=https://discord.gg/ArdAhnN
+@@ -14,11 +14,11 @@ runelite.dnschange.link=https://1.1.1.1/dns/#setup-instructions
+ runelite.jav_config=https://oldschool.config.runescape.com/jav_config.ws
+ runelite.jav_config_backup=https://static.runelite.net/jav_config.ws
+ runelite.pluginhub.url=https://repo.runelite.net/plugins
+-runelite.pluginhub.version=${project.version}
+-runelite.api.base=https://api.runelite.net/runelite-${project.version}
++runelite.pluginhub.version=1.11.8
++runelite.api.base=https://api.runelite.net/runelite-1.11.8
+ runelite.session=https://api.runelite.net/session
+ runelite.static.base=https://static.runelite.net
+ runelite.ws=https://api.runelite.net/ws2
+ runelite.config=https://static.runelite.net/config.json
+ runelite.osrstwitter.link=https://twitter.com/OldSchoolRS
+-runelite.oauth.redirect=https://runelite.net/logged-in
+\ No newline at end of file
++runelite.oauth.redirect=https://runelite.net/logged-in
+diff --git a/runelite-client/src/main/java/net/runelite/api/DummyApi.java b/runelite-client/src/main/java/net/runelite/api/DummyApi.java
+new file mode 100644
+index 000000000..dc452f0e7
+--- /dev/null
++++ b/runelite-client/src/main/java/net/runelite/api/DummyApi.java
+@@ -0,0 +1,17 @@
++package net.runelite.api;
++
++/**
++ * DummyApi is a minimal stub for agent-module testing and patch demonstration.
++ */
++public class DummyApi {
++    /**
++     * Returns a test string for verifying agent-module integration.
++     */
++    public static String getTestString() {
++        return "DummyApi.getTestString() called successfully!";
++    }
++
++    public void doNothing() {
++        // This method intentionally left blank.
++    }
++}
+diff --git a/runelite-client/src/main/java/net/runelite/client/helper/agent/AgentRegistry.java b/runelite-client/src/main/java/net/runelite/client/helper/agent/AgentRegistry.java
+new file mode 100644
+index 000000000..cb2e75290
+--- /dev/null
++++ b/runelite-client/src/main/java/net/runelite/client/helper/agent/AgentRegistry.java
+@@ -0,0 +1,256 @@
++package net.runelite.client.helper.agent;
++
++/**
++ * Registry for agent modules and services.
++ * <b>IMPORTANT:</b> Only the overlay uses injected hooks/ASM. All other interaction with RuneLite must use the minimal API exposed by patch files only.
++ * Do NOT reference or depend on any code from runelite/ directly. This registry is part of the hybrid patch-based approach.
++ */
++
++import net.runelite.client.helper.agent.services.AgentService;
++import net.runelite.client.helper.agent.helpermodules.AgentModule;
++import net.runelite.client.helper.agent.services.DebugLoggingService;
++import net.runelite.client.helper.agent.helpermodules.dummy.DummyModule;
++import net.runelite.client.helper.agent.helpermodules.agility.AgilityModule;
++import net.runelite.client.helper.agent.services.GameStateService;
++import net.runelite.client.helper.agent.services.HookingService;
++import net.runelite.api.Client;
++import net.runelite.client.ui.ClientToolbar;
++import net.runelite.client.callback.ClientThread;
++import net.runelite.client.eventbus.EventBus;
++import net.runelite.client.input.MouseManager;
++import net.runelite.client.helper.agent.helpermodules.antiafk.AntiAfkModule;
++import net.runelite.client.helper.agent.services.RandomizationService;
++import net.runelite.client.helper.agent.services.TickService;
++import net.runelite.client.helper.agent.services.ChatMessageService;
++
++import java.util.ArrayList;
++import java.util.List;
++
++public class AgentRegistry {
++    private final List<AgentService> services = new ArrayList<>();
++    private final List<AgentModule> modules = new ArrayList<>();
++    private final HookingService hookingService = new HookingService();
++    private final GameStateService gameStateService = new GameStateService(hookingService);
++    private Client client;
++    private ClientToolbar clientToolbar;
++    private ClientThread clientThread;
++    private EventBus eventBus;
++    private MouseManager mouseManager;
++    private net.runelite.client.input.KeyManager keyManager;
++    private DebugLoggingService debugLoggingService = new DebugLoggingService();
++    private final RandomizationService randomizationService = new RandomizationService();
++    private final TickService tickService = new TickService(this);
++    private final ChatMessageService chatMessageService = new ChatMessageService(this);
++
++    public AgentRegistry() {
++        // Register core services and modules here
++        services.add(debugLoggingService);
++        services.add(gameStateService);
++        services.add(hookingService);
++        // Do NOT add randomizationService, tickService, or chatMessageService to services list, as they do not implement AgentService
++        modules.add(new DummyModule(this));
++        modules.add(new AgilityModule(this));
++        modules.add(new AntiAfkModule(this));
++    }
++
++    public List<AgentService> getServices() {
++        return services;
++    }
++
++    public List<AgentModule> getModules() {
++        return modules;
++    }
++
++    public GameStateService getGameStateService() {
++        return gameStateService;
++    }
++
++    public HookingService getHookingService() {
++        return hookingService;
++    }
++
++    public void setClient(Client client) {
++        this.client = client;
++    }
++
++    public Client getClient() {
++        return client;
++    }
++
++    public void setClientToolbar(ClientToolbar clientToolbar) {
++        this.clientToolbar = clientToolbar;
++    }
++
++    public ClientToolbar getClientToolbar() {
++        return clientToolbar;
++    }
++
++    public void setClientThread(ClientThread clientThread) {
++        this.clientThread = clientThread;
++    }
++
++    public ClientThread getClientThread() {
++        return clientThread;
++    }
++
++    public void setEventBus(EventBus eventBus) {
++        this.eventBus = eventBus;
++    }
++
++    public EventBus getEventBus() {
++        return eventBus;
++    }
++
++    public void setMouseManager(MouseManager mouseManager) {
++        this.mouseManager = mouseManager;
++    }
++
++    public MouseManager getMouseManager() {
++        return mouseManager;
++    }
++
++    public void setKeyManager(net.runelite.client.input.KeyManager keyManager) {
++        this.keyManager = keyManager;
++    }
++
++    /**
++     * Get the KeyManager for simulating key events.
++     * @return KeyManager instance or null if not available
++     */
++    public net.runelite.client.input.KeyManager getKeyManager() {
++        return keyManager;
++    }
++
++    /**
++     * Expose the minimal direct game object interaction API to agent modules.
++     * This is the preferred, robust automation entrypoint for object interaction.
++     *
++     * @param objectId the id of the game object to interact with
++     * @param action the action to perform (e.g., "Climb", "Jump", "Cross")
++     * @return true if the interaction was successfully initiated, false otherwise
++     */
++    public boolean interactWithGameObject(int objectId, String action) {
++        if (client == null) {
++            return false;
++        }
++        // Get the current plane
++        int plane = client.getTopLevelWorldView().getPlane();
++        net.runelite.api.Scene scene = client.getTopLevelWorldView().getScene();
++        if (scene == null) {
++            return false;
++        }
++        net.runelite.api.Tile[][] tiles = scene.getTiles()[plane];
++        if (tiles == null) {
++            return false;
++        }
++        for (int x = 0; x < tiles.length; x++) {
++            for (int y = 0; y < tiles[x].length; y++) {
++                net.runelite.api.Tile tile = tiles[x][y];
++                if (tile == null)
++                    continue;
++                for (net.runelite.api.GameObject obj : tile.getGameObjects()) {
++                    if (obj != null && obj.getId() == objectId) {
++                        net.runelite.api.ObjectComposition comp = client.getObjectDefinition(objectId);
++                        String target = comp != null ? comp.getName() : "";
++                        client.menuAction(
++                            obj.getSceneMinLocation().getX(),
++                            obj.getSceneMinLocation().getY(),
++                            net.runelite.api.MenuAction.GAME_OBJECT_FIRST_OPTION,
++                            objectId,
++                            -1,
++                            action,
++                            target
++                        );
++                        return true;
++                    }
++                }
++            }
++        }
++        return false;
++    }
++
++    /**
++     * Set the presence of a ground item for agent tracking.
++     * This should be called by patched event code when a ground item spawns or despawns.
++     *
++     * @param itemId the id of the ground item
++     * @param present true if present, false if despawned
++     */
++    public static void setGroundItemPresence(int itemId, boolean present) {
++        // For simplicity, use a static set. In production, refactor to instance state.
++        if (present) {
++            GroundItemPresenceHolder.PRESENT_ITEMS.add(itemId);
++        } else {
++            GroundItemPresenceHolder.PRESENT_ITEMS.remove(itemId);
++        }
++    }
++
++    /**
++     * Check if a ground item is present (for Mark of Grace logic, etc).
++     * @param itemId the id of the ground item
++     * @return true if present, false otherwise
++     */
++    public static boolean isGroundItemPresent(int itemId) {
++        return GroundItemPresenceHolder.PRESENT_ITEMS.contains(itemId);
++    }
++
++    // Static holder for ground item presence (for patch/test logic)
++    private static class GroundItemPresenceHolder {
++        private static final java.util.Set<Integer> PRESENT_ITEMS = new java.util.HashSet<>();
++    }
++
++    /**
++     * Interact with a ground item using the minimal API.
++     * This method attempts to perform the specified action on the ground item identified by itemId.
++     * If the interaction is successful, the item is removed from the agent's ground item presence tracking.
++     *
++     * @param itemId the id of the ground item to interact with
++     * @param action the action to perform (e.g., "Take", "Pick up")
++     * @return true if the interaction was successfully initiated, false otherwise
++     */
++    public boolean interactWithGroundItem(int itemId, String action) {
++        // Attempt to interact with the ground item using the minimal API
++        boolean result = false;
++        try {
++            // This should invoke the correct menu action for the ground item
++            result = /* minimal API call to interact with ground item */ false;
++        } catch (Exception e) {
++            // Log or handle error
++        }
++        // If successful, remove the item from our agent's ground item presence tracking
++        if (result) {
++            setGroundItemPresence(itemId, false);
++        }
++        return result;
++    }
++
++    /**
++     * Open a game tab by name. This is a stub for anti-AFK; implement with menu actions or client API as needed.
++     * @param tabName The name of the tab to open (e.g., "Inventory", "Stats", etc.)
++     */
++    public void openTab(String tabName) {
++        // TODO: Implement real tab switching using menu actions or client API
++        if (getClient() != null) {
++            getClient().addChatMessage(
++                net.runelite.api.ChatMessageType.GAMEMESSAGE,
++                "",
++                "[AgentRegistry] (stub) Would open tab: " + tabName,
++                null
++            );
++        }
++    }
++
++    public DebugLoggingService getDebugLoggingService() {
++        return debugLoggingService;
++    }
++
++    public RandomizationService getRandomizationService() {
++        return randomizationService;
++    }
++    public TickService getTickService() {
++        return tickService;
++    }
++    public ChatMessageService getChatMessageService() {
++        return chatMessageService;
++    }
++}
+diff --git a/runelite-client/src/main/java/net/runelite/client/helper/agent/OsrsHelperAgent.java b/runelite-client/src/main/java/net/runelite/client/helper/agent/OsrsHelperAgent.java
+new file mode 100644
+index 000000000..ab3f73389
+--- /dev/null
++++ b/runelite-client/src/main/java/net/runelite/client/helper/agent/OsrsHelperAgent.java
+@@ -0,0 +1,79 @@
++package net.runelite.client.helper.agent;
++
++/**
++ * Main entry point for the OSRS Helper Agent.
++ * <b>IMPORTANT:</b> Only the overlay uses injected hooks/ASM. All other interaction with RuneLite must use the minimal API exposed by patch files only.
++ * Do NOT reference or depend on any code from runelite/ directly. This agent is part of the hybrid patch-based approach.
++ */
++
++import java.io.File;
++import java.io.FileWriter;
++import java.io.IOException;
++import java.util.logging.*;
++import net.runelite.client.helper.agent.services.AgentService;
++import net.runelite.client.helper.agent.sidebar.OsrsHelperSidebarPanel;
++import net.runelite.client.helper.agent.sidebar.OsrsHelperSidebarButtonFactory;
++import net.runelite.client.ui.ClientToolbar;
++import net.runelite.client.ui.NavigationButton;
++import net.runelite.client.callback.ClientThread;
++import net.runelite.client.eventbus.EventBus;
++import net.runelite.client.ui.overlay.OverlayManager;
++import net.runelite.client.input.MouseManager;
++import net.runelite.api.Client;
++
++public class OsrsHelperAgent {
++    private static final Logger logger = Logger.getLogger("OsrsHelperAgent");
++    private static FileHandler fileHandler;
++    private static NavigationButton sidebarButton;
++
++    // Single start method, EventBus and OverlayManager are required and must not be null
++    public static void start(Client client, ClientToolbar clientToolbar, ClientThread clientThread, EventBus eventBus, OverlayManager overlayManager, MouseManager mouseManager, net.runelite.client.input.KeyManager keyManager) {
++        if (eventBus == null) {
++            throw new IllegalArgumentException("EventBus must not be null when starting OsrsHelperAgent.");
++        }
++        if (overlayManager == null) {
++            throw new IllegalArgumentException("OverlayManager must not be null when starting OsrsHelperAgent.");
++        }
++        setupLogging();
++        logger.info("OsrsHelperAgent started via start() (sidebar integration)");
++        initializeAgent(client, clientToolbar, clientThread, eventBus, overlayManager, mouseManager, keyManager);
++    }
++
++    private static void setupLogging() {
++        try {
++            File logFile = new File("agent-output");
++            if (logFile.exists()) {
++                new FileWriter(logFile, false).close(); // Clear file
++            }
++            fileHandler = new FileHandler("agent-output", false);
++            fileHandler.setFormatter(new SimpleFormatter());
++            logger.addHandler(fileHandler);
++            logger.setUseParentHandlers(true);
++        } catch (IOException e) {
++            System.err.println("Failed to set up logging: " + e.getMessage());
++        }
++    }
++
++    private static void initializeAgent(Client client, ClientToolbar clientToolbar, ClientThread clientThread, EventBus eventBus, OverlayManager overlayManager, MouseManager mouseManager, net.runelite.client.input.KeyManager keyManager) {
++        AgentRegistry registry = new AgentRegistry();
++        registry.setClient(client);
++        registry.setClientToolbar(clientToolbar);
++        registry.setClientThread(clientThread);
++        registry.setEventBus(eventBus);
++        registry.setMouseManager(mouseManager);
++        registry.setKeyManager(keyManager);
++        // Initialize all services
++        for (AgentService service : registry.getServices()) {
++            service.initialize();
++        }
++        // Create and register the sidebar panel and button
++        OsrsHelperSidebarPanel panel = new OsrsHelperSidebarPanel(registry);
++        sidebarButton = OsrsHelperSidebarButtonFactory.createSidebarButton(panel);
++        if (clientToolbar != null) {
++            clientToolbar.addNavigation(sidebarButton);
++        } else {
++            logger.warning("ClientToolbar is null. Sidebar button not registered.");
++        }
++        logger.info("All services initialized. Sidebar button and panel registered.");
++    }
++}
+diff --git a/runelite-client/src/main/java/net/runelite/client/helper/agent/canifis-course-obstacles.md b/runelite-client/src/main/java/net/runelite/client/helper/agent/canifis-course-obstacles.md
+new file mode 100644
+index 000000000..62cb6beab
+--- /dev/null
++++ b/runelite-client/src/main/java/net/runelite/client/helper/agent/canifis-course-obstacles.md
+@@ -0,0 +1,33 @@
++# Canifis Rooftop Agility Course Obstacles
++
++This file documents the obstacle order, object IDs, and coordinates (to be filled in) for the Canifis Rooftop Agility Course. This information is useful for automation and reference.
++
++## Obstacle Order and Object IDs
++
++1. Start Tree - `ROOFTOPS_CANIFIS_START_TREE`
++2. Gap 1 - `ROOFTOPS_CANIFIS_JUMP`
++3. Gap 2 - `ROOFTOPS_CANIFIS_JUMP_2`
++4. Gap 3 - `ROOFTOPS_CANIFIS_JUMP_5`
++5. Gap 4 - `ROOFTOPS_CANIFIS_JUMP_3`
++6. Pole Vault - `ROOFTOPS_CANIFIS_POLEVAULT`
++7. Gap 5 - `ROOFTOPS_CANIFIS_JUMP_4`
++8. Leap Down (Finish) - `ROOFTOPS_CANIFIS_LEAPDOWN`
++
++| Step | Obstacle Name      | Object ID                   | Menu Entry ID | Menu Entry Type          |
++| ---- | ------------------ | --------------------------- | ------------- | ------------------------ |
++| 1    | Start Tree         | ROOFTOPS_CANIFIS_START_TREE | 14843         | GAME_OBJECT_FIRST_OPTION |
++| 2    | Gap 1              | ROOFTOPS_CANIFIS_JUMP       | 14844         | GAME_OBJECT_FIRST_OPTION |
++| 3    | Gap 2              | ROOFTOPS_CANIFIS_JUMP_2     | 14845         | GAME_OBJECT_FIRST_OPTION |
++| 4    | Gap 3              | ROOFTOPS_CANIFIS_JUMP_5     | 14848         | GAME_OBJECT_FIRST_OPTION |
++| 5    | Gap 4              | ROOFTOPS_CANIFIS_JUMP_3     | 14846         | GAME_OBJECT_FIRST_OPTION |
++| 6    | Pole Vault         | ROOFTOPS_CANIFIS_POLEVAULT  | 14894         | GAME_OBJECT_FIRST_OPTION |
++| 7    | Gap 5              | ROOFTOPS_CANIFIS_JUMP_4     | 14847         | GAME_OBJECT_FIRST_OPTION |
++| 8    | Leap Down (Finish) | ROOFTOPS_CANIFIS_LEAPDOWN   | 14897         | GAME_OBJECT_FIRST_OPTION |
++
++---
++
++**Menu Entry IDs (in course order):**
++
++14843, 14844, 14845, 14848, 14846, 14894, 14847, 14897
++
++All of these menu entries have a type of `GAME_OBJECT_FIRST_OPTION`.
+diff --git a/runelite-client/src/main/java/net/runelite/client/helper/agent/helpermodules/AgentModule.java b/runelite-client/src/main/java/net/runelite/client/helper/agent/helpermodules/AgentModule.java
+new file mode 100644
+index 000000000..2f0d75270
+--- /dev/null
++++ b/runelite-client/src/main/java/net/runelite/client/helper/agent/helpermodules/AgentModule.java
+@@ -0,0 +1,28 @@
++package net.runelite.client.helper.agent.helpermodules;
++
++/**
++ * Base class for all agent helper modules.
++ * <b>IMPORTANT:</b> Only the overlay uses injected hooks/ASM. All other interaction with RuneLite must use the minimal API exposed by patch files only.
++ * Do NOT reference or depend on any code from runelite/ directly. All modules must comply with the hybrid patch-based approach.
++ */
++public interface AgentModule {
++    /**
++     * Called when the module is enabled.
++     */
++    void onEnable();
++
++    /**
++     * Called when the module is disabled.
++     */
++    void onDisable();
++
++    /**
++     * @return the display name of the module
++     */
++    String getName();
++
++    /**
++     * @return true if the module is currently enabled
++     */
++    boolean isEnabled();
++}
+diff --git a/runelite-client/src/main/java/net/runelite/client/helper/agent/helpermodules/agility/AgilityCourse.java b/runelite-client/src/main/java/net/runelite/client/helper/agent/helpermodules/agility/AgilityCourse.java
+new file mode 100644
+index 000000000..2e744c18b
+--- /dev/null
++++ b/runelite-client/src/main/java/net/runelite/client/helper/agent/helpermodules/agility/AgilityCourse.java
+@@ -0,0 +1,19 @@
++package net.runelite.client.helper.agent.helpermodules.agility;
++
++/**
++ * Represents an agility course for automation.
++ * <b>IMPORTANT:</b> Only the overlay uses injected hooks/ASM. All other interaction with RuneLite must use the minimal API exposed by patch files only.
++ * Do NOT reference or depend on any code from runelite/ directly. This class is part of the hybrid patch-based approach.
++ */
++public interface AgilityCourse {
++    /**
++     * @return the display name of the course
++     */
++    String getName();
++
++    /**
++     * @return the list of obstacles in the course
++     */
++    java.util.List<AgilityObstacle> getObstacles();
++    // Future extensibility: add methods for course-specific logic
++}
+diff --git a/runelite-client/src/main/java/net/runelite/client/helper/agent/helpermodules/agility/AgilityModule.java b/runelite-client/src/main/java/net/runelite/client/helper/agent/helpermodules/agility/AgilityModule.java
+new file mode 100644
+index 000000000..2722adf3f
+--- /dev/null
++++ b/runelite-client/src/main/java/net/runelite/client/helper/agent/helpermodules/agility/AgilityModule.java
+@@ -0,0 +1,206 @@
++package net.runelite.client.helper.agent.helpermodules.agility;
++
++import net.runelite.client.helper.agent.helpermodules.AgentModule;
++import net.runelite.client.helper.agent.AgentRegistry;
++import net.runelite.client.helper.agent.services.RandomizationService;
++import net.runelite.client.helper.agent.services.ChatMessageService;
++import net.runelite.client.helper.agent.services.TickService;
++
++import java.util.Map;
++import java.util.LinkedHashMap;
++
++/**
++ * Agility helper module for course automation.
++ * <b>IMPORTANT:</b> Only the overlay uses injected hooks/ASM. All other interaction with RuneLite must use the minimal API exposed by patch files only.
++ * Do NOT reference or depend on any code from runelite/ directly. This module is part of the hybrid patch-based approach.
++ *
++ * Minimal scaffold for the Agility helper module.
++ * This module will be extended to provide automation and overlays for the Agility skill.
++ */
++public class AgilityModule implements AgentModule {
++    private boolean enabled = false;
++    private final Map<String, AgilityCourse> courses = new LinkedHashMap<>();
++    private AgilityCourse selectedCourse = null;
++    private final AgentRegistry agentRegistry;
++    private RandomizationService randomizationService;
++    private ChatMessageService chatMessageService;
++    private TickService tickService;
++    private Runnable tickListener;
++
++    // Agility automation state
++    private int obstacleIndex = 0;
++    private boolean waitingForIdle = false;
++    private int ticksToWait = 0;
++    // New state for automation
++    private int lapCount = 0;
++    private int maxLaps = 1; // -1 for infinite
++    private int currentRetry = 0;
++    private static final int MAX_RETRIES = 3;
++    private enum State { IDLE, RUNNING, WAITING, ERROR, PAUSED }
++    private State state = State.IDLE;
++
++    public AgilityModule(AgentRegistry agentRegistry/*, AgilityAutomationService automationService*/) {
++        this.agentRegistry = agentRegistry;
++        // Remove: this.automationService = automationService;
++        this.randomizationService = agentRegistry.getRandomizationService();
++        this.chatMessageService = agentRegistry.getChatMessageService();
++        this.tickService = agentRegistry.getTickService();
++        this.tickListener = this::onGameTick;
++        // Register available courses
++        AgilityCourse canifis = new CanifisCourse();
++        courses.put(canifis.getName(), canifis);
++        selectedCourse = canifis; // Default to Canifis course
++        // Future: add more courses here
++    }
++
++    @Override
++    public void onEnable() {
++        if (selectedCourse == null) {
++            System.err.println("[AgilityModule] Cannot enable: No course selected!");
++            enabled = false;
++            return;
++        }
++        enabled = true;
++        System.out.println("AgilityModule enabled for course: " + selectedCourse.getName());
++        lapCount = 0;
++        obstacleIndex = 0;
++        waitingForIdle = false;
++        state = State.RUNNING;
++        currentRetry = 0;
++        if (tickService != null) {
++            tickService.registerTickListener(tickListener);
++        }
++    }
++
++    private void onGameTick() {
++        // Mark of Grace logic: check for presence and pick up if found
++        if (AgentRegistry.isGroundItemPresent(11849)) {
++            boolean markPickup = agentRegistry.interactWithGroundItem(11849, "Take");
++            String markMsg = markPickup
++                ? String.format("[AgilityModule] interactWithGroundItem SUCCESS: id=11849, action=Take")
++                : String.format("[AgilityModule] interactWithGroundItem FAILED: id=11849, action=Take");
++            System.out.println(markMsg);
++            chatMessageService.sendGameMessage(markMsg);
++            // Pause obstacle logic until mark is gone
++            return;
++        }
++        if (!enabled || selectedCourse == null) return;
++        // Automation logic
++        if (obstacleIndex >= selectedCourse.getObstacles().size()) {
++            lapCount++;
++            chatMessageService.sendGameMessage("[AgilityModule] Completed lap " + lapCount);
++            if (maxLaps > 0 && lapCount >= maxLaps) {
++                chatMessageService.sendGameMessage("[AgilityModule] Max laps reached. Stopping automation.");
++                state = State.IDLE;
++                onDisable();
++                return;
++            }
++            obstacleIndex = 0;
++            chatMessageService.sendGameMessage("[AgilityModule] Starting next lap.");
++        }
++        if (waitingForIdle) {
++            if (ticksToWait > 0) {
++                ticksToWait--;
++                return;
++            } else if (ticksToWait == 0) {
++                waitingForIdle = false;
++                obstacleIndex = (obstacleIndex + 1) % selectedCourse.getObstacles().size();
++                return;
++            }
++        }
++        int currentAnim = agentRegistry.getClient().getLocalPlayer().getAnimation();
++        if (!waitingForIdle && currentAnim == -1) {
++            AgilityObstacle obstacle = selectedCourse.getObstacles().get(obstacleIndex);
++            boolean interactionSuccess = agentRegistry.interactWithGameObject(obstacle.getObjectId(), obstacle.getMenuAction());
++            String msg = interactionSuccess
++                ? String.format("[AgilityModule] interactWithGameObject SUCCESS: id=%d, action=%s", obstacle.getObjectId(), obstacle.getMenuAction())
++                : String.format("[AgilityModule] interactWithGameObject FAILED: id=%d, action=%s", obstacle.getObjectId(), obstacle.getMenuAction());
++            System.out.println(msg);
++            chatMessageService.sendGameMessage(msg);
++            if (interactionSuccess) {
++                chatMessageService.sendGameMessage(String.format("[AgilityModule] Preparing for next obstacle after successful interact: id=%d, action=%s", obstacle.getObjectId(), obstacle.getMenuAction()));
++                waitingForIdle = true;
++                ticksToWait = 7 + randomizationService.nextInt(5); // 7-11 inclusive
++                // --- Recovery check for Gap 3 (by name or ID) ---
++                if (obstacle.getName().contains("Gap 3") || obstacle.getObjectId() == 14848) {
++                    net.runelite.api.Player player = agentRegistry.getClient().getLocalPlayer();
++                    if (player != null && player.getWorldLocation() != null && player.getWorldLocation().getPlane() == 0) {
++                        System.out.println("[AgilityModule] Detected fall at Gap 3. Initiating recovery.");
++                        chatMessageService.sendGameMessage("[AgilityModule] Detected fall at Gap 3. Returning to course start.");
++                        obstacleIndex = 0;
++                        waitingForIdle = false;
++                        ticksToWait = 0;
++                        return;
++                    }
++                }
++            } else {
++                handleRetryOrError("Failed to interact with obstacle: " + obstacle.getName(), obstacle);
++            }
++        }
++    }
++
++    private void handleRetryOrError(String message, AgilityObstacle obstacle) {
++        chatMessageService.sendGameMessage(message + " (retry " + (currentRetry + 1) + "/" + MAX_RETRIES + ")");
++        currentRetry++;
++        if (currentRetry < MAX_RETRIES) {
++            chatMessageService.sendGameMessage("Retrying obstacle: " + obstacle.getName());
++            // Try again next tick
++        } else {
++            chatMessageService.sendGameMessage("Max retries reached for obstacle: " + obstacle.getName() + ". Aborting automation.");
++            state = State.ERROR;
++            onDisable();
++        }
++    }
++
++    @Override
++    public void onDisable() {
++        enabled = false;
++        System.out.println("AgilityModule disabled");
++        // Remove: automationService.stopAutomation();
++        if (tickService != null) {
++            tickService.unregisterTickListener(tickListener);
++        }
++        state = State.IDLE;
++    }
++
++    @Override
++    public String getName() {
++        return "Agility Helper";
++    }
++
++    @Override
++    public boolean isEnabled() {
++        return enabled;
++    }
++
++    public java.util.Set<String> getCourseNames() {
++        return courses.keySet();
++    }
++
++    public void setSelectedCourse(String courseName) {
++        this.selectedCourse = courses.get(courseName);
++    }
++
++    public AgilityCourse getSelectedCourse() {
++        return selectedCourse;
++    }
++
++    /**
++     * Returns the list of obstacles for the currently selected course, or null if none selected.
++     */
++    public java.util.List<AgilityObstacle> getCurrentObstacles() {
++        return selectedCourse != null ? ((selectedCourse instanceof CanifisCourse) ? ((CanifisCourse) selectedCourse).getObstacles() : null) : null;
++    }
++
++    public void setMaxLaps(int maxLaps) {
++        this.maxLaps = maxLaps;
++    }
++
++    public int getLapCount() {
++        return lapCount;
++    }
++
++    public State getState() {
++        return state;
++    }
++}
+diff --git a/runelite-client/src/main/java/net/runelite/client/helper/agent/helpermodules/agility/AgilityObstacle.java b/runelite-client/src/main/java/net/runelite/client/helper/agent/helpermodules/agility/AgilityObstacle.java
+new file mode 100644
+index 000000000..5017294f0
+--- /dev/null
++++ b/runelite-client/src/main/java/net/runelite/client/helper/agent/helpermodules/agility/AgilityObstacle.java
+@@ -0,0 +1,51 @@
++package net.runelite.client.helper.agent.helpermodules.agility;
++
++import net.runelite.client.helper.agent.helpermodules.agility.WorldPosition;
++
++/**
++ * Represents an obstacle in an agility course.
++ * <b>IMPORTANT:</b> Only the overlay uses injected hooks/ASM. All other interaction with RuneLite must use the minimal API exposed by patch files only.
++ * Do NOT reference or depend on any code from runelite/ directly. This class is part of the hybrid patch-based approach.
++ */
++public class AgilityObstacle {
++    private final String name;
++    private final int objectId;
++    private final String menuAction;
++    private final WorldPosition obstaclePosition;
++    private final WorldPosition expectedPlayerPosition;
++    private final int expectedAnimationId;
++    // Future extensibility: coordinates, actions, etc.
++
++    public AgilityObstacle(String name, int objectId, String menuAction, WorldPosition obstaclePosition, WorldPosition expectedPlayerPosition, int expectedAnimationId) {
++        this.name = name;
++        this.objectId = objectId;
++        this.menuAction = menuAction;
++        this.obstaclePosition = obstaclePosition;
++        this.expectedPlayerPosition = expectedPlayerPosition;
++        this.expectedAnimationId = expectedAnimationId;
++    }
++
++    public String getName() {
++        return name;
++    }
++
++    public int getObjectId() {
++        return objectId;
++    }
++
++    public String getMenuAction() {
++        return menuAction;
++    }
++
++    public WorldPosition getObstaclePosition() {
++        return obstaclePosition;
++    }
++
++    public WorldPosition getExpectedPlayerPosition() {
++        return expectedPlayerPosition;
++    }
++
++    public int getExpectedAnimationId() {
++        return expectedAnimationId;
++    }
++}
+diff --git a/runelite-client/src/main/java/net/runelite/client/helper/agent/helpermodules/agility/CanifisCourse.java b/runelite-client/src/main/java/net/runelite/client/helper/agent/helpermodules/agility/CanifisCourse.java
+new file mode 100644
+index 000000000..cfbcc87bd
+--- /dev/null
++++ b/runelite-client/src/main/java/net/runelite/client/helper/agent/helpermodules/agility/CanifisCourse.java
+@@ -0,0 +1,41 @@
++package net.runelite.client.helper.agent.helpermodules.agility;
++
++import java.util.List;
++import java.util.Arrays;
++
++/**
++ * Canifis agility course definition for automation.
++ * <b>IMPORTANT:</b> Only the overlay uses injected hooks/ASM. All other interaction with RuneLite must use the minimal API exposed by patch files only.
++ * Do NOT reference or depend on any code from runelite/ directly. This class is part of the hybrid patch-based approach.
++ */
++public class CanifisCourse implements AgilityCourse {
++    // Local object ID constants for Canifis rooftop course obstacles (from RuneLite ObjectID)
++    private static final int ROOFTOPS_CANIFIS_START_TREE = 10819;
++    private static final int ROOFTOPS_CANIFIS_JUMP = 10820;
++    private static final int ROOFTOPS_CANIFIS_JUMP_2 = 10821;
++    private static final int ROOFTOPS_CANIFIS_JUMP_5 = 10828;
++    private static final int ROOFTOPS_CANIFIS_JUMP_3 = 10822;
++    private static final int ROOFTOPS_CANIFIS_POLEVAULT = 10823;
++    private static final int ROOFTOPS_CANIFIS_JUMP_4 = 10829;
++    private static final int ROOFTOPS_CANIFIS_LEAPDOWN = 10831;
++
++    private final List<AgilityObstacle> obstacles = Arrays.asList(
++        new AgilityObstacle("Start Tree", ROOFTOPS_CANIFIS_START_TREE, "Climb", new WorldPosition(3508, 3488, 0), new WorldPosition(3508, 3491, 2), 828),
++        new AgilityObstacle("Gap 1", ROOFTOPS_CANIFIS_JUMP, "Jump", new WorldPosition(3508, 3492, 2), new WorldPosition(3516, 3492, 2), 828),
++        new AgilityObstacle("Gap 2", ROOFTOPS_CANIFIS_JUMP_2, "Jump", new WorldPosition(3516, 3492, 2), new WorldPosition(3523, 3498, 2), 828),
++        new AgilityObstacle("Gap 3", ROOFTOPS_CANIFIS_JUMP_5, "Jump", new WorldPosition(3523, 3498, 2), new WorldPosition(3523, 3507, 2), 828),
++        new AgilityObstacle("Gap 4", ROOFTOPS_CANIFIS_JUMP_3, "Jump", new WorldPosition(3523, 3507, 2), new WorldPosition(3516, 3513, 2), 828),
++        new AgilityObstacle("Pole Vault", ROOFTOPS_CANIFIS_POLEVAULT, "Vault", new WorldPosition(3516, 3513, 2), new WorldPosition(3508, 3513, 2), 11789),
++        new AgilityObstacle("Gap 5", ROOFTOPS_CANIFIS_JUMP_4, "Jump", new WorldPosition(3508, 3513, 2), new WorldPosition(3508, 3505, 2), 828),
++        new AgilityObstacle("Leap Down (Finish)", ROOFTOPS_CANIFIS_LEAPDOWN, "Leap-down", new WorldPosition(3508, 3505, 2), new WorldPosition(3506, 3504, 0), 832)
++    );
++
++    @Override
++    public String getName() {
++        return "Canifis Rooftop";
++    }
++
++    public List<AgilityObstacle> getObstacles() {
++        return obstacles;
++    }
++}
+diff --git a/runelite-client/src/main/java/net/runelite/client/helper/agent/helpermodules/agility/WorldPosition.java b/runelite-client/src/main/java/net/runelite/client/helper/agent/helpermodules/agility/WorldPosition.java
+new file mode 100644
+index 000000000..b05331981
+--- /dev/null
++++ b/runelite-client/src/main/java/net/runelite/client/helper/agent/helpermodules/agility/WorldPosition.java
+@@ -0,0 +1,20 @@
++package net.runelite.client.helper.agent.helpermodules.agility;
++
++/**
++ * Represents a world position for agility automation.
++ * <b>IMPORTANT:</b> Only the overlay uses injected hooks/ASM. All other interaction with RuneLite must use the minimal API exposed by patch files only.
++ * Do NOT reference or depend on any code from runelite/ directly. This class is part of the hybrid patch-based approach.
++ * Simple value class for world position (x, y, plane).
++ */
++public class WorldPosition {
++    public final int x, y, plane;
++    public WorldPosition(int x, int y, int plane) {
++        this.x = x;
++        this.y = y;
++        this.plane = plane;
++    }
++    @Override
++    public String toString() {
++        return "(" + x + ", " + y + ", " + plane + ")";
++    }
++}
+diff --git a/runelite-client/src/main/java/net/runelite/client/helper/agent/helpermodules/antiafk/AntiAfkModule.java b/runelite-client/src/main/java/net/runelite/client/helper/agent/helpermodules/antiafk/AntiAfkModule.java
+new file mode 100644
+index 000000000..93d911010
+--- /dev/null
++++ b/runelite-client/src/main/java/net/runelite/client/helper/agent/helpermodules/antiafk/AntiAfkModule.java
+@@ -0,0 +1,113 @@
++package net.runelite.client.helper.agent.helpermodules.antiafk;
++
++import net.runelite.client.helper.agent.AgentRegistry;
++import net.runelite.client.helper.agent.helpermodules.AgentModule;
++import net.runelite.client.helper.agent.services.RandomizationService;
++import net.runelite.client.helper.agent.services.ChatMessageService;
++import net.runelite.client.helper.agent.services.TickService;
++
++/**
++ * AntiAfkModule: Modular, extensible anti-AFK logic for OSRS Helper Agent.
++ * Simulates safe, randomized actions (tab switching, camera rotation, keypresses) to prevent AFK logout.
++ * No mouse movement is simulated for safety.
++ *
++ * This module replaces the anti-AFK logic previously found in DummyModule.
++ *
++ * Designed for easy extension with additional anti-AFK strategies.
++ */
++public class AntiAfkModule implements AgentModule {
++    private boolean enabled = false;
++    private AgentRegistry agentRegistry;
++    private RandomizationService randomizationService;
++    private ChatMessageService chatMessageService;
++    private TickService tickService;
++    private Runnable tickListener;
++    private long lastAntiAfkTick = 0;
++    private int nextAntiAfkInterval = 0;
++    private static final int MIN_ANTIAFK_TICKS = 500; // ~5 min
++    private static final int MAX_ANTIAFK_TICKS = 1800; // ~18 min
++    private static final String[] TABS = {"Inventory", "Stats", "Equipment", "Prayer", "Magic"};
++    private static final int[] KEYCODES = {32, 49, 50, 77}; // space, '1', '2', 'm'
++
++    public AntiAfkModule(AgentRegistry agentRegistry) {
++        this.agentRegistry = agentRegistry;
++        this.randomizationService = agentRegistry.getRandomizationService();
++        this.chatMessageService = agentRegistry.getChatMessageService();
++        this.tickService = agentRegistry.getTickService();
++        this.tickListener = this::onGameTick;
++    }
++
++    @Override
++    public void onEnable() {
++        enabled = true;
++        lastAntiAfkTick = 0;
++        nextAntiAfkInterval = randomInterval();
++        if (tickService != null) {
++            tickService.registerTickListener(tickListener);
++        }
++    }
++
++    @Override
++    public void onDisable() {
++        enabled = false;
++        if (tickService != null) {
++            tickService.unregisterTickListener(tickListener);
++        }
++    }
++
++    private void onGameTick() {
++        if (!enabled) return;
++        long tick = System.currentTimeMillis() / 600;
++        if (lastAntiAfkTick == 0) {
++            lastAntiAfkTick = tick;
++            nextAntiAfkInterval = randomInterval();
++            return;
++        }
++        if (tick - lastAntiAfkTick >= nextAntiAfkInterval) {
++            performAntiAfkAction();
++            lastAntiAfkTick = tick;
++            nextAntiAfkInterval = randomInterval();
++        }
++    }
++
++    private void performAntiAfkAction() {
++        int action = randomizationService.nextInt(3);
++        switch (action) {
++            case 0:
++                // Simulate tab switch
++                String tab = TABS[randomizationService.nextInt(TABS.length)];
++                agentRegistry.getDebugLoggingService().log("[AntiAfkModule] Switching tab: " + tab);
++                chatMessageService.sendGameMessage("[AntiAfkModule] Switching tab: " + tab);
++                // Implement tab switching via minimal API if available
++                break;
++            case 1:
++                // Simulate camera rotation
++                int angle = randomizationService.nextInt(360);
++                agentRegistry.getDebugLoggingService().log("[AntiAfkModule] Rotating camera by " + angle + " degrees");
++                chatMessageService.sendGameMessage("[AntiAfkModule] Rotating camera by " + angle + " degrees");
++                // Implement camera rotation via minimal API if available
++                break;
++            case 2:
++                // Simulate keypress
++                int key = KEYCODES[randomizationService.nextInt(KEYCODES.length)];
++                agentRegistry.getDebugLoggingService().log("[AntiAfkModule] Simulating keypress: " + key);
++                chatMessageService.sendGameMessage("[AntiAfkModule] Simulating keypress: " + key);
++                // Implement keypress via minimal API if available
++                break;
++        }
++    }
++
++    private int randomInterval() {
++        return MIN_ANTIAFK_TICKS + randomizationService.nextInt(MAX_ANTIAFK_TICKS - MIN_ANTIAFK_TICKS + 1);
++    }
++
++    @Override
++    public String getName() {
++        return "Anti-AFK Module";
++    }
++
++    @Override
++    public boolean isEnabled() {
++        return enabled;
++    }
++}
+diff --git a/runelite-client/src/main/java/net/runelite/client/helper/agent/helpermodules/dummy/DummyModule.java b/runelite-client/src/main/java/net/runelite/client/helper/agent/helpermodules/dummy/DummyModule.java
+new file mode 100644
+index 000000000..1ecbbfe5e
+--- /dev/null
++++ b/runelite-client/src/main/java/net/runelite/client/helper/agent/helpermodules/dummy/DummyModule.java
+@@ -0,0 +1,49 @@
++package net.runelite.client.helper.agent.helpermodules.dummy;
++
++import net.runelite.client.helper.agent.AgentRegistry;
++import net.runelite.client.helper.agent.helpermodules.AgentModule;
++import net.runelite.client.helper.agent.services.ChatMessageService;
++import net.runelite.api.DummyApi;
++
++/**
++ * Dummy helper module for demonstration/testing.
++ * <b>IMPORTANT:</b> Only the overlay uses injected hooks/ASM. All other interaction with RuneLite must use the minimal API exposed by patch files only.
++ * Do NOT reference or depend on any code from runelite/ directly. This module is part of the hybrid patch-based approach.
++ */
++public class DummyModule implements AgentModule {
++    private boolean enabled = false;
++    private ChatMessageService chatMessageService;
++    @SuppressWarnings("unused")
++    private AgentRegistry agentRegistry;
++
++    public DummyModule(AgentRegistry agentRegistry) {
++        this.agentRegistry = agentRegistry;
++        this.chatMessageService = agentRegistry.getChatMessageService();
++    }
++
++    @Override
++    public void onEnable() {
++        enabled = true;
++        System.out.println("DummyModule enabled");
++        String result = DummyApi.getTestString();
++        System.out.println("DummyApi.getTestString() result: " + result);
++        chatMessageService.sendGameMessage("Dummy Module enabled! (" + result + ")");
++    }
++
++    @Override
++    public void onDisable() {
++        enabled = false;
++        System.out.println("DummyModule disabled");
++        chatMessageService.sendGameMessage("Dummy Module disabled!");
++    }
++
++    @Override
++    public String getName() {
++        return "Dummy Module";
++    }
++
++    @Override
++    public boolean isEnabled() {
++        return enabled;
++    }
++}
+diff --git a/runelite-client/src/main/java/net/runelite/client/helper/agent/services/AgentService.java b/runelite-client/src/main/java/net/runelite/client/helper/agent/services/AgentService.java
+new file mode 100644
+index 000000000..5631af975
+--- /dev/null
++++ b/runelite-client/src/main/java/net/runelite/client/helper/agent/services/AgentService.java
+@@ -0,0 +1,19 @@
++package net.runelite.client.helper.agent.services;
++
++/**
++ * Base interface for all agent services.
++ * <b>IMPORTANT:</b> Only the overlay uses injected hooks/ASM. All other interaction with RuneLite must use the minimal API exposed by patch files only.
++ * Do NOT reference or depend on any code from runelite/ directly. All services must comply with the hybrid patch-based approach.
++ * Services should be stateless or manage their own state.
++ */
++public interface AgentService {
++    /**
++     * Called when the service is initialized by the registry.
++     */
++    void initialize();
++
++    /**
++     * Called when the service is being shut down.
++     */
++    void shutdown();
++}
+diff --git a/runelite-client/src/main/java/net/runelite/client/helper/agent/services/ChatMessageService.java b/runelite-client/src/main/java/net/runelite/client/helper/agent/services/ChatMessageService.java
+new file mode 100644
+index 000000000..5f2d93b1c
+--- /dev/null
++++ b/runelite-client/src/main/java/net/runelite/client/helper/agent/services/ChatMessageService.java
+@@ -0,0 +1,32 @@
++package net.runelite.client.helper.agent.services;
++
++import net.runelite.api.ChatMessageType;
++import net.runelite.client.helper.agent.AgentRegistry;
++
++/**
++ * Centralized service for formatting and sending chat messages from agent modules.
++ * Ensures consistent formatting and future extensibility (e.g., color, prefix, etc).
++ */
++public class ChatMessageService {
++    private final AgentRegistry agentRegistry;
++
++    public ChatMessageService(AgentRegistry agentRegistry) {
++        this.agentRegistry = agentRegistry;
++    }
++
++    /**
++     * Sends a simple game message to the chatbox.
++     */
++    public void sendGameMessage(String message) {
++        sendMessage(ChatMessageType.GAMEMESSAGE, message);
++    }
++
++    /**
++     * Sends a message of the given type to the chatbox.
++     */
++    public void sendMessage(ChatMessageType type, String message) {
++        agentRegistry.getClient().addChatMessage(type, "", message, null);
++    }
++
++    // Add more formatting/prefix options as needed
++}
+diff --git a/runelite-client/src/main/java/net/runelite/client/helper/agent/services/DebugLoggingService.java b/runelite-client/src/main/java/net/runelite/client/helper/agent/services/DebugLoggingService.java
+new file mode 100644
+index 000000000..b64f02d76
+--- /dev/null
++++ b/runelite-client/src/main/java/net/runelite/client/helper/agent/services/DebugLoggingService.java
+@@ -0,0 +1,37 @@
++package net.runelite.client.helper.agent.services;
++
++import java.util.logging.Logger;
++
++/**
++ * Service for debug and error logging for the agent.
++ * <b>IMPORTANT:</b> Only the overlay uses injected hooks/ASM. All other interaction with RuneLite must use the minimal API exposed by patch files only.
++ * Do NOT reference or depend on any code from runelite/ directly. This service is part of the hybrid patch-based approach.
++ */
++public class DebugLoggingService implements AgentService {
++    private static final Logger logger = Logger.getLogger("DebugLoggingService");
++    private boolean initialized = false;
++
++    @Override
++    public void initialize() {
++        initialized = true;
++        logger.info("DebugLoggingService initialized");
++    }
++
++    @Override
++    public void shutdown() {
++        logger.info("DebugLoggingService shutdown");
++        initialized = false;
++    }
++
++    public boolean isInitialized() {
++        return initialized;
++    }
++
++    /**
++     * Log a message at INFO level for agent debugging.
++     * @param message The message to log.
++     */
++    public void log(String message) {
++        logger.info(message);
++    }
++}
+diff --git a/runelite-client/src/main/java/net/runelite/client/helper/agent/services/GameStateService.java b/runelite-client/src/main/java/net/runelite/client/helper/agent/services/GameStateService.java
+new file mode 100644
+index 000000000..6bbdf8434
+--- /dev/null
++++ b/runelite-client/src/main/java/net/runelite/client/helper/agent/services/GameStateService.java
+@@ -0,0 +1,81 @@
++package net.runelite.client.helper.agent.services;
++
++import java.util.logging.Logger;
++
++/**
++ * Service for tracking and interacting with game state via the minimal API.
++ * <b>IMPORTANT:</b> Only the overlay uses injected hooks/ASM. All other interaction with RuneLite must use the minimal API exposed by patch files only.
++ * Do NOT reference or depend on any code from runelite/ directly. This service is part of the hybrid patch-based approach.
++ *
++ * No ASM or runtime injection is used here.
++ */
++public class GameStateService implements AgentService {
++    private static final Logger logger = Logger.getLogger("GameStateService");
++    private final HookingService hookingService;
++
++    public GameStateService(HookingService hookingService) {
++        this.hookingService = hookingService;
++    }
++
++    @Override
++    public void initialize() {
++        logger.info("GameStateService initialized");
++        // Register listeners with HookingService to update local state or trigger logic
++        hookingService.addPlayerAnimationListener(isAnimating -> {
++            logger.fine("[GameStateService] Player animation state changed: " + isAnimating);
++            // Optionally, trigger automation or update local cache
++        });
++        hookingService.addPlayerPositionListener(position -> {
++            logger.fine("[GameStateService] Player position changed: " + position);
++            // Optionally, trigger automation or update local cache
++        });
++        hookingService.addObjectPresenceListener(objectId -> {
++            logger.fine("[GameStateService] Object presence changed: " + objectId);
++            // Optionally, trigger automation or update local cache
++        });
++    }
++
++    @Override
++    public void shutdown() {
++        logger.info("GameStateService shutdown");
++        // TODO: Clean up hooks or polling
++    }
++
++    // Returns the player's current position (to be implemented via HookingService)
++    public Object getPlayerPosition() {
++        // Use HookingService to get the player's world position via the minimal API only
++        return hookingService.getCurrentPlayerPosition();
++    }
++
++    // Returns true if the player is currently animating (to be implemented via HookingService)
++    public boolean isPlayerAnimating() {
++        // Use HookingService to check if the player is currently performing an animation via the minimal API only
++        return hookingService.getCurrentPlayerAnimating();
++    }
++
++    // Returns true if the specified object is present in the scene (to be implemented via HookingService)
++    public boolean isObjectPresent(String objectId) {
++        // Use HookingService to check if the object with the given ID is present in the scene
++        return hookingService.isObjectPresentNow(objectId);
++    }
++
++    // Returns the player's current animation ID (delegates to HookingService)
++    public int getCurrentPlayerAnimationId() {
++        return hookingService.getCurrentPlayerAnimationId();
++    }
++
++    // Returns true if the specified ground item is present (for Mark of Grace, etc)
++    public boolean isGroundItemPresent(int itemId) {
++        return net.runelite.client.helper.agent.AgentRegistry.isGroundItemPresent(itemId);
++    }
++
++    // Convenience method for Mark of Grace
++    public boolean isMarkOfGracePresent() {
++        return isGroundItemPresent(11849);
++    }
++
++    // Set ground item presence (for use by patched event code if needed)
++    public void setGroundItemPresence(int itemId, boolean present) {
++        net.runelite.client.helper.agent.AgentRegistry.setGroundItemPresence(itemId, present);
++    }
++}
+diff --git a/runelite-client/src/main/java/net/runelite/client/helper/agent/services/HookingService.java b/runelite-client/src/main/java/net/runelite/client/helper/agent/services/HookingService.java
+new file mode 100644
+index 000000000..e508d6249
+--- /dev/null
++++ b/runelite-client/src/main/java/net/runelite/client/helper/agent/services/HookingService.java
+@@ -0,0 +1,169 @@
++package net.runelite.client.helper.agent.services;
++
++import java.util.*;
++import java.util.logging.Logger;
++import java.util.function.Consumer;
++
++/**
++ * Service for managing hooks and agent integration.
++ * <b>IMPORTANT:</b> Only the overlay uses injected hooks/ASM. All other interaction with RuneLite must use the minimal API exposed by patch files only.
++ * Do NOT reference or depend on any code from runelite/ directly. This service is part of the hybrid patch-based approach.
++ *
++ * No ASM or runtime injection is used here.
++ */
++public class HookingService implements AgentService {
++    private static final Logger logger = Logger.getLogger("HookingService");
++
++    // Example: Listeners for player animation state changes
++    private final List<Consumer<Boolean>> playerAnimationListeners = new ArrayList<>();
++    // Example: Listeners for player position changes
++    private final List<Consumer<Object>> playerPositionListeners = new ArrayList<>();
++    // Example: Listeners for object presence changes
++    private final List<Consumer<String>> objectPresenceListeners = new ArrayList<>();
++
++    private int currentPlayerAnimationId = -1;
++    private static HookingService instance;
++    private boolean currentPlayerAnimating = false;
++    private Object currentPlayerPosition = null;
++    private final Set<String> presentObjects = new HashSet<>();
++
++    // --- Game tick listener support ---
++    private final List<Runnable> gameTickListeners = new ArrayList<>();
++
++    public HookingService() {
++        instance = this;
++    }
++
++    public static HookingService getInstance() {
++        return instance;
++    }
++
++    // State update methods (to be called by minimal API, not ASM)
++    public void setPlayerAnimating(boolean isAnimating) {
++        this.currentPlayerAnimating = isAnimating;
++        notifyPlayerAnimationChanged(isAnimating);
++    }
++
++    public void setCurrentPlayerAnimationId(int animationId) {
++        this.currentPlayerAnimationId = animationId;
++    }
++
++    public int getCurrentPlayerAnimationId() {
++        return currentPlayerAnimationId;
++    }
++
++    public void setPlayerPosition(Object position) {
++        logger.info("[DEBUG] setPlayerPosition called with: " + (position == null ? "null" : position.toString() + " (" + (position == null ? "null" : position.getClass().getName()) + ")"));
++        this.currentPlayerPosition = position;
++        notifyPlayerPositionChanged(position);
++    }
++
++    public Object getCurrentPlayerPosition() {
++        logger.info("[DEBUG] getCurrentPlayerPosition returning: " + (currentPlayerPosition == null ? "null" : currentPlayerPosition.toString() + " (" + currentPlayerPosition.getClass().getName() + ")"));
++        return currentPlayerPosition;
++    }
++
++    public void setObjectPresence(String objectId, boolean present) {
++        if (present) {
++            presentObjects.add(objectId);
++        } else {
++            presentObjects.remove(objectId);
++        }
++        notifyObjectPresenceChanged(objectId);
++    }
++
++    // --- Synchronous state queries for services ---
++    public boolean getCurrentPlayerAnimating() {
++        return currentPlayerAnimating;
++    }
++
++    public boolean isObjectPresentNow(String objectId) {
++        return presentObjects.contains(objectId);
++    }
++
++    @Override
++    public void initialize() {
++        logger.info("HookingService initialized");
++        // TODO: Set up listeners for RuneLite client events using only the minimal API exposed by patch files
++    }
++
++    @Override
++    public void shutdown() {
++        logger.info("HookingService shutdown");
++        // TODO: Clean up listeners
++    }
++
++    // Register a listener for player animation state changes
++    public void addPlayerAnimationListener(Consumer<Boolean> listener) {
++        playerAnimationListeners.add(listener);
++    }
++
++    // Register a listener for player position changes
++    public void addPlayerPositionListener(Consumer<Object> listener) {
++        playerPositionListeners.add(listener);
++    }
++
++    // Register a listener for object presence changes
++    public void addObjectPresenceListener(Consumer<String> listener) {
++        objectPresenceListeners.add(listener);
++    }
++
++    // Example: Notify all listeners of a player animation state change
++    public void notifyPlayerAnimationChanged(boolean isAnimating) {
++        for (Consumer<Boolean> listener : playerAnimationListeners) {
++            listener.accept(isAnimating);
++        }
++    }
++
++    // Example: Notify all listeners of a player position change
++    public void notifyPlayerPositionChanged(Object position) {
++        for (Consumer<Object> listener : playerPositionListeners) {
++            listener.accept(position);
++        }
++    }
++
++    // Example: Notify all listeners of an object presence change
++    public void notifyObjectPresenceChanged(String objectId) {
++        for (Consumer<String> listener : objectPresenceListeners) {
++            listener.accept(objectId);
++        }
++    }
++
++    /**
++     * Register a listener to be called every game tick. Returns a handle for removal.
++     */
++    public Object addGameTickListener(Runnable listener) {
++        synchronized (gameTickListeners) {
++            gameTickListeners.add(listener);
++        }
++        return listener;
++    }
++
++    /**
++     * Remove a previously registered game tick listener.
++     */
++    public void removeGameTickListener(Object handle) {
++        synchronized (gameTickListeners) {
++            gameTickListeners.remove(handle);
++        }
++    }
++
++    /**
++     * Call this from the minimal API patch on every game tick to notify listeners.
++     */
++    public void fireGameTick() {
++        List<Runnable> copy;
++        synchronized (gameTickListeners) {
++            copy = new ArrayList<>(gameTickListeners);
++        }
++        for (Runnable r : copy) {
++            try {
++                r.run();
++            } catch (Exception e) {
++                logger.warning("Exception in game tick listener: " + e.getMessage());
++            }
++        }
++    }
++
++    // TODO: Add methods for querying current state, registering additional listeners, etc. All must use the minimal API only.
++}
+diff --git a/runelite-client/src/main/java/net/runelite/client/helper/agent/services/RandomizationService.java b/runelite-client/src/main/java/net/runelite/client/helper/agent/services/RandomizationService.java
+new file mode 100644
+index 000000000..0e0dfdc2b
+--- /dev/null
++++ b/runelite-client/src/main/java/net/runelite/client/helper/agent/services/RandomizationService.java
+@@ -0,0 +1,33 @@
++package net.runelite.client.helper.agent.services;
++
++import java.util.Random;
++
++/**
++ * Provides centralized, testable randomization utilities for agent modules.
++ * All random number generation for agent logic should use this service.
++ */
++public class RandomizationService {
++    private final Random random;
++
++    public RandomizationService() {
++        this.random = new Random();
++    }
++
++    public int nextInt(int bound) {
++        return random.nextInt(bound);
++    }
++
++    public int nextInt(int origin, int bound) {
++        return origin + random.nextInt(bound - origin);
++    }
++
++    public boolean nextBoolean() {
++        return random.nextBoolean();
++    }
++
++    public double nextDouble() {
++        return random.nextDouble();
++    }
++
++    // Add more utility methods as needed
++}
+diff --git a/runelite-client/src/main/java/net/runelite/client/helper/agent/services/TickService.java b/runelite-client/src/main/java/net/runelite/client/helper/agent/services/TickService.java
+new file mode 100644
+index 000000000..26241b4ce
+--- /dev/null
++++ b/runelite-client/src/main/java/net/runelite/client/helper/agent/services/TickService.java
+@@ -0,0 +1,60 @@
++package net.runelite.client.helper.agent.services;
++
++import java.util.HashSet;
++import java.util.Set;
++import java.util.function.Consumer;
++import net.runelite.client.helper.agent.AgentRegistry;
++
++/**
++ * Centralized tick handling for agent modules.
++ * Modules can register/unregister tick listeners for consistent tick lifecycle management.
++ */
++public class TickService {
++    private final Set<Runnable> tickListeners = new HashSet<>();
++    private final AgentRegistry agentRegistry;
++    private Object gameTickListenerHandle;
++    private boolean started = false;
++
++    public TickService(AgentRegistry agentRegistry) {
++        this.agentRegistry = agentRegistry;
++    }
++
++    /**
++     * Registers a tick listener (Runnable called every game tick).
++     */
++    public void registerTickListener(Runnable listener) {
++        tickListeners.add(listener);
++        ensureStarted();
++    }
++
++    /**
++     * Unregisters a tick listener.
++     */
++    public void unregisterTickListener(Runnable listener) {
++        tickListeners.remove(listener);
++        if (tickListeners.isEmpty()) {
++            stop();
++        }
++    }
++
++    private void ensureStarted() {
++        if (!started && agentRegistry.getHookingService() != null) {
++            gameTickListenerHandle = agentRegistry.getHookingService().addGameTickListener(this::onGameTick);
++            started = true;
++        }
++    }
++
++    private void stop() {
++        if (started && agentRegistry.getHookingService() != null && gameTickListenerHandle != null) {
++            agentRegistry.getHookingService().removeGameTickListener(gameTickListenerHandle);
++            started = false;
++            gameTickListenerHandle = null;
++        }
++    }
++
++    private void onGameTick() {
++        for (Runnable listener : tickListeners) {
++            listener.run();
++        }
++    }
++}
+diff --git a/runelite-client/src/main/java/net/runelite/client/helper/agent/sidebar/OsrsHelperSidebarButtonFactory.java b/runelite-client/src/main/java/net/runelite/client/helper/agent/sidebar/OsrsHelperSidebarButtonFactory.java
+new file mode 100644
+index 000000000..2047e535e
+--- /dev/null
++++ b/runelite-client/src/main/java/net/runelite/client/helper/agent/sidebar/OsrsHelperSidebarButtonFactory.java
+@@ -0,0 +1,34 @@
++package net.runelite.client.helper.agent.sidebar;
++
++import net.runelite.client.ui.NavigationButton;
++import net.runelite.client.ui.PluginPanel;
++import javax.swing.ImageIcon;
++import java.awt.image.BufferedImage;
++import java.awt.Color;
++import java.awt.Graphics2D;
++
++/**
++ * Factory for creating the OSRS Helper navigation button for the RuneLite sidebar.
++ */
++public class OsrsHelperSidebarButtonFactory {
++    public static NavigationButton createSidebarButton(PluginPanel panel) {
++        BufferedImage icon = createDefaultIcon();
++        return NavigationButton.builder()
++                .tooltip("OSRS Helper")
++                .icon(icon)
++                .priority(1000)
++                .panel(panel)
++                .build();
++    }
++
++    private static BufferedImage createDefaultIcon() {
++        BufferedImage img = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
++        Graphics2D g = img.createGraphics();
++        g.setColor(new Color(0x4B8BBE)); // A blue color for demonstration
++        g.fillOval(2, 2, 12, 12);
++        g.setColor(Color.WHITE);
++        g.drawString("H", 5, 12);
++        g.dispose();
++        return img;
++    }
++}
+diff --git a/runelite-client/src/main/java/net/runelite/client/helper/agent/sidebar/OsrsHelperSidebarPanel.java b/runelite-client/src/main/java/net/runelite/client/helper/agent/sidebar/OsrsHelperSidebarPanel.java
+new file mode 100644
+index 000000000..d191c1c32
+--- /dev/null
++++ b/runelite-client/src/main/java/net/runelite/client/helper/agent/sidebar/OsrsHelperSidebarPanel.java
+@@ -0,0 +1,42 @@
++package net.runelite.client.helper.agent.sidebar;
++
++import net.runelite.client.ui.PluginPanel;
++import javax.swing.JLabel;
++import java.awt.BorderLayout;
++import net.runelite.client.helper.agent.AgentRegistry;
++import net.runelite.client.helper.agent.helpermodules.AgentModule;
++import java.util.List;
++import javax.swing.JCheckBox;
++import javax.swing.JPanel;
++import java.awt.GridLayout;
++
++/**
++ * OSRS Helper Panel for sidebar integration.
++ * This panel will be shown when the navigation button is clicked in the RuneLite sidebar.
++ */
++public class OsrsHelperSidebarPanel extends PluginPanel {
++    private final AgentRegistry agentRegistry;
++
++    public OsrsHelperSidebarPanel(AgentRegistry agentRegistry) {
++        super();
++        this.agentRegistry = agentRegistry;
++        setLayout(new BorderLayout());
++        JLabel title = new JLabel("OSRS Helper Modules");
++        add(title, BorderLayout.NORTH);
++
++        List<AgentModule> modules = agentRegistry.getModules();
++        JPanel modulePanel = new JPanel(new GridLayout(0, 1, 0, 4));
++        for (AgentModule module : modules) {
++            JCheckBox box = new JCheckBox(module.getName(), module.isEnabled());
++            box.addActionListener(e -> {
++                if (box.isSelected()) {
++                    module.onEnable();
++                } else {
++                    module.onDisable();
++                }
++            });
++            modulePanel.add(box);
++        }
++        add(modulePanel, BorderLayout.CENTER);
++    }
++}
