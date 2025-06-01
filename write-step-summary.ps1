@@ -14,7 +14,7 @@ $content = @"
 # Step Complete: $StepName
 
 **Date:** $ts
-**Agent:** GitHub Copilot
+**Agent:** Mr. Gippity
 
 $Summary
 "@

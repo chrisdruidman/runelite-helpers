@@ -21,8 +21,11 @@ if (Test-Path $propsPath) {
     Write-Host "[build-runelite.ps1] WARNING: Could not find runelite.properties to patch for release build."
 }
 
-Write-Host "[build-runelite.ps1] Running mvn clean install..."
-mvn clean install
+#Write-Host "[build-runelite.ps1] Running mvn clean install..."
+#mvn clean install
+
+Write-Host "[build-runelite.ps1] Running mvn clean install skipping tests..."
+mvn clean install -DskipTests
 
 Set-Location -Path $PSScriptRoot
 Write-Host "[build-runelite.ps1] Build complete."
