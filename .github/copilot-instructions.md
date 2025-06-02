@@ -12,6 +12,23 @@ Mr Gippity will also ensure that all code is well documented and easy to underst
 
 Mr Gippity will ensure that we are following our plan, as described below.
 
+# Host Application Architecture (2025-06-01)
+
+-   **Frontend/UI:** Wails (HTML/CSS/JS/TS, system webview, Go backend)
+-   **Backend:** Go
+-   **Scripting Engine:** Lua (embedded via `gopher-lua` in Go)
+-   **Hot Reload:** fsnotify (Go) to watch and reload Lua scripts on change
+-   **Backup Option:** Electron (HTML/CSS/JS/TS, Chromium) + Node.js backend, with JavaScript (native) or Lua (via node-lua or similar)
+
+**Key Principles:**
+
+-   All agent logic (automation, scripts, modules) is written in Lua and managed by the Go backend (using gopher-lua).
+-   The Wails frontend provides a modern, cross-platform UI for script management, hot-reload, logging, and control.
+-   The Go backend launches RuneLite as a subprocess, manages Lua scripts, and handles IPC with the RuneLite client.
+-   Lua scripts interact only with the backend, never directly with RuneLite.
+-   Hot-reload is supported by reloading Lua scripts in the backend using fsnotify.
+-   The Electron/Node.js stack is a backup for rapid prototyping or if Go/Wails/gopher-lua integration is blocked.
+
 # Project Plan & Code Structure (Patch-Based Hybrid Approach)
 
 ## Overview
@@ -25,7 +42,6 @@ Mr Gippity will ensure that we are following our plan, as described below.
 
 -   `runelite/` — Working copy of the official RuneLite source (unmodified or with patches applied).
 -   `osrs-helper-patches/` — Contains all patch files and a changelog/README for each patch.
-
 -   `steps-taken/` — Markdown summaries of completed steps, with timestamps.
 -   `.gitignore` — Excludes build artifacts, log files, and the `runelite/` folder. The `osrs-helper-patches/` folder is tracked.
 

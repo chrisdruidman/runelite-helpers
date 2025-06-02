@@ -33,3 +33,6 @@ osrs-helper-launcher/osrs-helper-launcher/launcher-output
 agent-output
 agent-output.lck
 agent-output - with agility and mark of grace menu entries
+
+#Ignore go/wails build output
+osrs-helper-host/build
